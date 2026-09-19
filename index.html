@@ -81,6 +81,9 @@
         <h3 id="cal-month-label" style="margin:0; text-transform:none; letter-spacing:normal; color:var(--text); font-size:15px; font-weight:600;">חודש</h3>
         <button id="cal-next">‹</button>
       </div>
+      <div id="cal-today-row" style="display:none; text-align:center; margin-bottom:6px;">
+        <button id="cal-today-btn" class="cal-today-btn">חזרה להיום</button>
+      </div>
       <div class="calendar-grid" id="calendar-grid"></div>
     </div>
 
@@ -203,9 +206,9 @@
     <div class="field">
       <label>שעת התחלה</label>
       <div class="time-select-row">
-        <select id="shift-form-hour"></select>
-        <span class="time-sep">:</span>
         <select id="shift-form-minute"></select>
+        <span class="time-sep">:</span>
+        <select id="shift-form-hour"></select>
       </div>
     </div>
     <button class="btn btn-primary" id="shift-form-save">שמירה</button>

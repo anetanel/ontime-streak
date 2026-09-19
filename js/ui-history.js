@@ -19,6 +19,8 @@ export function initHistory() {
   els.calPrev = document.getElementById("cal-prev");
   els.calNext = document.getElementById("cal-next");
   els.calLabel = document.getElementById("cal-month-label");
+  els.calTodayRow = document.getElementById("cal-today-row");
+  els.calTodayBtn = document.getElementById("cal-today-btn");
   els.calGrid = document.getElementById("calendar-grid");
   els.trendChart = document.getElementById("trend-chart");
   els.trendEmpty = document.getElementById("trend-empty");
@@ -56,6 +58,13 @@ export function initHistory() {
     if (state.calYear === now.getFullYear() && state.calMonth === now.getMonth()) return;
     state.calMonth += 1;
     if (state.calMonth > 11) { state.calMonth = 0; state.calYear += 1; }
+    renderHome_lastApp && renderCalendar(renderHome_lastApp);
+  });
+
+  els.calTodayBtn.addEventListener("click", () => {
+    const now = new Date();
+    state.calYear = now.getFullYear();
+    state.calMonth = now.getMonth();
     renderHome_lastApp && renderCalendar(renderHome_lastApp);
   });
 
@@ -150,6 +159,7 @@ function renderCalendar(app) {
   const now = new Date();
   const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth();
   els.calNext.style.visibility = isCurrentMonth ? "hidden" : "visible";
+  els.calTodayRow.style.display = isCurrentMonth ? "none" : "block";
 
   const firstDow = monthDate.getDay();
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
@@ -230,7 +240,7 @@ function openShiftForm(app, dateStr) {
     els.shiftDelete.style.display = "block";
   } else {
     els.shiftTitle.textContent = `הוספת משמרת — ${dateLabel}`;
-    els.shiftHour.value = "09";
+    els.shiftHour.value = "10";
     els.shiftMinute.value = "00";
     els.shiftDelete.style.display = "none";
   }
