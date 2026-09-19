@@ -1,7 +1,7 @@
 const COLORS = ["#ff7a1a", "#ffd60a", "#34c759", "#0a84ff", "#ff375f", "#bf5af2", "#f5ebdc"];
 const RIBBON_COLORS = ["#FFD700", "#FF69B4", "#00CED1", "#FF4500"];
 const SPECIAL_EMOJIS = ["🌈", "⭐", "🦄"];
-const MAX_SPECIAL_EMOJIS = ["🌈", "⭐", "🦄", "🏅"];
+const MAX_SPECIAL_EMOJIS = ["🌈", "⭐", "🦄", "🏅", "❤️", "🎵", "🎶", "🦝"];
 
 function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -270,7 +270,7 @@ const TIER_CONFIG = {
   medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, sound: "chime", emojiRounds: 0, ribbonEveryMs: 0 },
   large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, sound: "chime", emojiRounds: 0, ribbonEveryMs: 0 },
   xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer", emojiRounds: 1, emojiPool: SPECIAL_EMOJIS, ribbonEveryMs: 1800 },
-  max: { burstCount: 8, particlesPerBurst: 65, duration: 6000, shells: 8, sound: "cheer", emojiRounds: 2, emojiPool: MAX_SPECIAL_EMOJIS, ribbonEveryMs: 1500 },
+  max: { burstCount: 8, particlesPerBurst: 65, duration: 10000, shells: 8, sound: "cheer", emojiRounds: 4, emojiPool: MAX_SPECIAL_EMOJIS, ribbonEveryMs: 1500 },
 };
 
 export function celebrate(canvas, tier, soundEnabled) {
