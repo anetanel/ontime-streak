@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<title>On-Time Streak</title>
+<meta name="theme-color" content="#0b0b0f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="On-Time">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <section id="screen-home" class="screen active">
+    <h1 class="topbar">On-Time Streak</h1>
+
+    <div class="card" style="text-align:center;">
+      <button id="checkin-btn" class="checkin-btn">I'm at Work</button>
+      <div id="checkin-status" class="stat-label"></div>
+    </div>
+
+    <div class="card">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="streak-flame">🔥</div>
+          <div class="stat-num" id="home-current-streak">0</div>
+          <div class="stat-label">Current Streak</div>
+        </div>
+        <div class="stat-box">
+          <div class="streak-flame">🏆</div>
+          <div class="stat-num" id="home-longest-streak">0</div>
+          <div class="stat-label">Longest Streak</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card reward-card" id="home-reward-card">
+      <div class="placeholder">🎵</div>
+      <div>
+        <div class="reward-title">No reward unlocked yet</div>
+        <div class="reward-sub">Keep your streak going!</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-history" class="screen">
+    <h1 class="topbar">History</h1>
+
+    <div class="card">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num" id="hist-current">0</div>
+          <div class="stat-label">Current</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="hist-longest">0</div>
+          <div class="stat-label">Longest</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="hist-pct">0%</div>
+          <div class="stat-label" id="hist-pct-label">On-Time (Week)</div>
+        </div>
+      </div>
+      <div class="segmented" id="pct-range-toggle">
+        <button data-range="week" class="active">Week</button>
+        <button data-range="month">Month</button>
+        <button data-range="all">All Time</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="month-nav">
+        <button id="cal-prev">‹</button>
+        <h3 id="cal-month-label" style="margin:0; text-transform:none; letter-spacing:normal; color:var(--text); font-size:15px; font-weight:600;">Month</h3>
+        <button id="cal-next">›</button>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+    </div>
+
+    <div class="card">
+      <h3>Arrival Time Trend</h3>
+      <svg id="trend-chart" class="trend-chart" viewBox="0 0 300 140" preserveAspectRatio="none"></svg>
+      <div id="trend-empty" class="empty-hint" style="display:none;">Not enough check-ins yet</div>
+    </div>
+  </section>
+
+  <section id="screen-rewards" class="screen">
+    <h1 class="topbar">Rewards</h1>
+    <div class="card">
+      <button class="btn btn-primary" id="add-reward-btn">+ Add Reward</button>
+      <div id="rewards-list"></div>
+      <div id="rewards-empty" class="empty-hint" style="display:none;">No rewards yet. Add a photo of a favorite musician and pick how many on-time days unlock it.</div>
+    </div>
+  </section>
+
+  <section id="screen-settings" class="screen">
+    <h1 class="topbar">Settings</h1>
+
+    <div class="card">
+      <h3>Work Schedule</h3>
+      <div class="field">
+        <label for="set-start-time">Expected start time</label>
+        <input type="time" id="set-start-time">
+      </div>
+      <div class="field">
+        <label for="set-grace">Grace period (minutes)</label>
+        <input type="number" id="set-grace" min="0" max="120" step="1">
+      </div>
+      <div id="schedule-toggles"></div>
+    </div>
+
+    <div class="card">
+      <h3>Sound</h3>
+      <div class="row-toggle">
+        <span>Celebration sounds</span>
+        <label class="switch">
+          <input type="checkbox" id="set-sound">
+          <span class="track"></span>
+          <span class="thumb"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="card">
+      <h3>Backup</h3>
+      <div id="backup-banner" class="banner" style="display:none;"></div>
+      <button class="btn btn-secondary" id="export-btn">Export Backup</button>
+      <button class="btn btn-secondary" id="import-btn">Import Backup</button>
+      <input type="file" id="import-file" accept="application/json" style="display:none;">
+      <div class="stat-label" id="last-backup-label"></div>
+    </div>
+
+    <div class="card">
+      <h3>Danger Zone</h3>
+      <button class="btn btn-danger" id="reset-btn">Reset All Data</button>
+    </div>
+  </section>
+
+  <nav class="tabbar">
+    <button data-screen="home" class="active"><span class="icon">🏠</span>Home</button>
+    <button data-screen="history"><span class="icon">📅</span>History</button>
+    <button data-screen="rewards"><span class="icon">🎵</span>Rewards</button>
+    <button data-screen="settings"><span class="icon">⚙️</span>Settings</button>
+  </nav>
+</div>
+
+<canvas id="celebration-canvas"></canvas>
+
+<div id="reveal-modal" class="reveal-modal hidden">
+  <div class="reveal-card">
+    <img id="reveal-img" src="" alt="" style="display:none;">
+    <div id="reveal-placeholder" class="placeholder" style="width:140px;height:140px;font-size:48px;margin:0 auto 16px;">🎉</div>
+    <h2 id="reveal-title">Milestone!</h2>
+    <p id="reveal-sub"></p>
+    <button class="btn btn-primary" id="reveal-close">Nice!</button>
+  </div>
+</div>
+
+<div id="reward-form-modal" class="modal-backdrop hidden">
+  <div class="modal-sheet">
+    <h2 id="reward-form-title">Add Reward</h2>
+    <div class="photo-picker">
+      <img id="reward-form-preview" src="" alt="" style="display:none;">
+      <div id="reward-form-placeholder" class="placeholder">🎵</div>
+      <button class="btn btn-secondary" id="reward-form-choose-photo" style="width:auto; margin:0; padding:10px 16px;">Choose Photo</button>
+      <input type="file" id="reward-form-file" accept="image/*" style="display:none;">
+    </div>
+    <div class="field">
+      <label for="reward-form-name">Musician / reward name</label>
+      <input type="text" id="reward-form-name" placeholder="e.g. Freddie Mercury">
+    </div>
+    <div class="field">
+      <label for="reward-form-threshold">Unlock after this many on-time days in a row</label>
+      <input type="number" id="reward-form-threshold" min="1" step="1">
+    </div>
+    <div id="reward-form-error" class="stat-label" style="color:var(--danger); display:none; margin-bottom:10px;"></div>
+    <button class="btn btn-primary" id="reward-form-save">Save</button>
+    <button class="btn btn-secondary" id="reward-form-delete" style="display:none;">Delete Reward</button>
+    <button class="btn btn-secondary" id="reward-form-cancel">Cancel</button>
+  </div>
+</div>
+
+<div id="day-detail-modal" class="modal-backdrop hidden">
+  <div class="modal-sheet">
+    <h2 id="day-detail-title">Day</h2>
+    <p id="day-detail-body" class="stat-label"></p>
+    <button class="btn btn-secondary" id="day-detail-close">Close</button>
+  </div>
+</div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
