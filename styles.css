@@ -50,7 +50,7 @@ body {
 
 .screen {
   flex: 1;
-  padding: calc(var(--safe-top) + 14px) 16px 20px;
+  padding: calc(var(--safe-top) + 14px) 16px calc(76px + var(--safe-bottom));
   display: none;
 }
 
@@ -165,7 +165,9 @@ body {
 .reward-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
 
 .tabbar {
-  position: sticky;
+  position: fixed;
+  left: 0;
+  right: 0;
   bottom: 0;
   display: flex;
   background: var(--tab-bg);
@@ -174,6 +176,7 @@ body {
   border-top: 1px solid var(--border);
   padding-bottom: var(--safe-bottom);
   z-index: 40;
+  will-change: transform;
 }
 
 .tabbar button {
