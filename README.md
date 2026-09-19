@@ -13,8 +13,8 @@ Live app: `https://anetanel.github.io/ontime-streak/`
 
 ## Everyday use (no tech knowledge needed)
 
-- **Home**: tap "I'm at Work" when you arrive. On time = confetti/fireworks. Late = a gentle reset message. If no shift was entered for today, checking in doesn't affect the streak either way.
-- **Calendar** (also doubles as Shifts, since this is part-time work with no fixed weekly pattern): tap any future date (shown in light purple once it has a shift) to add or edit that day's shift start time, or tap a purple day again to change/remove it. Tap a past date to see what happened that day. A day with no shift entered isn't counted as a scheduled work day at all. Also shows streak stats, an on-time-percentage toggle, and an arrival-time trend chart.
+- **Home**: tap "I'm at Work" when you arrive. On time turns the button into a gold star with confetti/fireworks. Late = a gentle reset message. If no shift was entered for today, the button is grayed out and disabled — there's nothing to check in against.
+- **Calendar** (also doubles as Shifts, since this is part-time work with no fixed weekly pattern): tap any future date (shown in light purple once it has a shift) to add or edit that day's shift start time, or tap a purple day again to change/remove it. On-time days get a small gold star badge. Tap a past date with a shift and no recorded arrival to enter what time she actually got there — if that counts as late, it'll ask why (old habits vs. unforeseen circumstances) before saving. Tap a past date that already has a recorded arrival to see it, with an edit option to correct it. Also shows streak stats, an on-time-percentage toggle, and an arrival-time trend chart.
 - **Rewards**: tap "+ Add Reward" to upload a photo of a favorite musician and set how many days in a row unlocks it. Tap the pencil on any reward to edit or delete it. No code, ever — this screen is the entire way to customize rewards.
 - **Settings**: grace period (how many minutes late still counts as on time), celebration sound, and where you back up your data (Export Backup) — do this occasionally and save the file to Files/iCloud or AirDrop it to someone, so history survives a lost phone or a cleared browser.
 
@@ -35,10 +35,10 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v14"; // increment this
+const CACHE_NAME = "ontime-streak-v15"; // increment this
 
 // js/version.js
-export const APP_VERSION = "14"; // ...and this, to the same number
+export const APP_VERSION = "15"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.
@@ -68,6 +68,6 @@ Real installability, offline behavior, and safe-area layout can only be verified
 
 - No reminder notifications — iOS Safari PWAs can't reliably send background push without a paid service. Use a regular iPhone alarm as the reminder to open the app.
 - No cloud sync between devices. Moving to a new phone requires Export Backup on the old one and Import Backup on the new one.
-- No backfilling a missed day — this keeps the streak meaningful, but means a forgotten check-in can't be corrected after the fact.
+- Backfilling only works for a date that already has a shift entered for it — there's still no way to retroactively add both a shift and an arrival time for a day nothing was ever scheduled on.
 - Shifts need to be entered before the day happens — there's no automatic recurring pattern, since the work schedule is irregular. A shift added after the fact for a past date will still be picked up by the streak/history calculations, but won't retroactively help if a check-in was already missed.
 - Relies on the iPhone's system clock for on-time/late calculation.

@@ -41,6 +41,19 @@ async function handleCheckin() {
     return;
   }
 
+  celebrateOnTimeCheckin();
+}
+
+export function showLateFeedback() {
+  els.revealImg.style.display = "none";
+  els.revealPlaceholder.style.display = "flex";
+  els.revealPlaceholder.textContent = "😌";
+  els.revealTitle.textContent = "זה בסדר";
+  els.revealSub.textContent = "האיחור הזה משפיע על הרצף שלך.";
+  showModal(els.revealModal);
+}
+
+export function celebrateOnTimeCheckin() {
   const newStreak = App.currentStreak;
   const tier = getTierForStreak(newStreak);
   celebrate(els.canvas, tier, App.settings.soundEnabled);
@@ -49,15 +62,6 @@ async function handleCheckin() {
   if (milestone) {
     showMilestoneReveal(milestone, newStreak);
   }
-}
-
-function showLateFeedback() {
-  els.revealImg.style.display = "none";
-  els.revealPlaceholder.style.display = "flex";
-  els.revealPlaceholder.textContent = "😌";
-  els.revealTitle.textContent = "זה בסדר";
-  els.revealSub.textContent = "היום איפס את הרצף — מחר זה יום חדש.";
-  showModal(els.revealModal);
 }
 
 function showMilestoneReveal(reward, streak) {
@@ -83,11 +87,12 @@ export function renderHome(app) {
   const todayRecord = app.checkinsByDate.get(today);
   const todayShift = app.shiftsByDate.get(today);
 
-  els.btn.classList.remove("late", "no-shift");
+  els.btn.classList.remove("late", "no-shift", "earned-star");
   if (todayRecord) {
     els.btn.disabled = true;
     if (todayRecord.status === "on-time") {
-      els.btn.textContent = "הגעת ✓";
+      els.btn.classList.add("earned-star");
+      els.btn.textContent = "⭐ הגעת בזמן";
       els.status.textContent = `הגעת בשעה ${new Date(todayRecord.timestamp).toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" })}`;
     } else {
       els.btn.textContent = "נרשם";

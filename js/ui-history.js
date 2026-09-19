@@ -1,6 +1,7 @@
-import { formatLocalDate, parseLocalDate, isScheduledDay } from "./streak.js";
+import { formatLocalDate, parseLocalDate, isScheduledDay, computeCheckinResult } from "./streak.js";
 import { showModal, hideModal, refreshAll } from "./app.js";
-import { saveShift, deleteShift } from "./db.js";
+import { saveShift, deleteShift, saveCheckin } from "./db.js";
+import { showLateFeedback, celebrateOnTimeCheckin } from "./ui-home.js";
 
 let els = {};
 let state = {
@@ -9,6 +10,9 @@ let state = {
   calMonth: new Date().getMonth(),
 };
 let shiftEditingDate = null;
+let dayDetailDate = null;
+let checkinEditingDate = null;
+let pendingLateResult = null;
 
 export function initHistory() {
   els.current = document.getElementById("hist-current");
@@ -27,6 +31,7 @@ export function initHistory() {
   els.dayModal = document.getElementById("day-detail-modal");
   els.dayTitle = document.getElementById("day-detail-title");
   els.dayBody = document.getElementById("day-detail-body");
+  els.dayEdit = document.getElementById("day-detail-edit");
   els.dayClose = document.getElementById("day-detail-close");
 
   els.shiftModal = document.getElementById("shift-form-modal");
@@ -37,7 +42,20 @@ export function initHistory() {
   els.shiftDelete = document.getElementById("shift-form-delete");
   els.shiftCancel = document.getElementById("shift-form-cancel");
 
-  populateTimeSelects();
+  els.checkinModal = document.getElementById("checkin-form-modal");
+  els.checkinTitle = document.getElementById("checkin-form-title");
+  els.checkinTimeStep = document.getElementById("checkin-form-time-step");
+  els.checkinReasonStep = document.getElementById("checkin-form-reason-step");
+  els.checkinHour = document.getElementById("checkin-form-hour");
+  els.checkinMinute = document.getElementById("checkin-form-minute");
+  els.checkinSave = document.getElementById("checkin-form-save");
+  els.checkinCancel = document.getElementById("checkin-form-cancel");
+  els.checkinReasonHabit = document.getElementById("checkin-form-reason-habit");
+  els.checkinReasonUnforeseen = document.getElementById("checkin-form-reason-unforeseen");
+  els.checkinReasonCancel = document.getElementById("checkin-form-reason-cancel");
+
+  populateTimeSelects(els.shiftHour, els.shiftMinute);
+  populateTimeSelects(els.checkinHour, els.checkinMinute);
 
   els.rangeToggle.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-range]");
@@ -69,26 +87,36 @@ export function initHistory() {
   });
 
   els.dayClose.addEventListener("click", () => hideModal(els.dayModal));
+  els.dayEdit.addEventListener("click", () => {
+    hideModal(els.dayModal);
+    openCheckinForm(renderHome_lastApp, dayDetailDate);
+  });
 
   els.shiftCancel.addEventListener("click", () => hideModal(els.shiftModal));
   els.shiftSave.addEventListener("click", handleSaveShift);
   els.shiftDelete.addEventListener("click", handleDeleteShift);
+
+  els.checkinCancel.addEventListener("click", () => hideModal(els.checkinModal));
+  els.checkinSave.addEventListener("click", handleCheckinSave);
+  els.checkinReasonHabit.addEventListener("click", () => finalizeCheckin("habit"));
+  els.checkinReasonUnforeseen.addEventListener("click", () => finalizeCheckin("unforeseen"));
+  els.checkinReasonCancel.addEventListener("click", () => hideModal(els.checkinModal));
 }
 
-function populateTimeSelects() {
+function populateTimeSelects(hourEl, minuteEl) {
   let hourHtml = "";
   for (let h = 0; h < 24; h++) {
     const v = String(h).padStart(2, "0");
     hourHtml += `<option value="${v}">${v}</option>`;
   }
-  els.shiftHour.innerHTML = hourHtml;
+  hourEl.innerHTML = hourHtml;
 
   let minuteHtml = "";
   for (let m = 0; m < 60; m += 5) {
     const v = String(m).padStart(2, "0");
     minuteHtml += `<option value="${v}">${v}</option>`;
   }
-  els.shiftMinute.innerHTML = minuteHtml;
+  minuteEl.innerHTML = minuteHtml;
 }
 
 let renderHome_lastApp = null;
@@ -187,8 +215,18 @@ function renderCalendar(app) {
     el.addEventListener("click", () => {
       const dateStr = el.dataset.date;
       const rec = app.checkinsByDate.get(dateStr);
-      if (!rec && dateStr >= formatLocalDate(new Date())) {
+      const todayStr = formatLocalDate(new Date());
+
+      if (rec) {
+        showDayDetail(app, dateStr);
+        return;
+      }
+      if (dateStr >= todayStr) {
         openShiftForm(app, dateStr);
+        return;
+      }
+      if (isScheduledDay(dateStr, app.shiftsByDate)) {
+        openCheckinForm(app, dateStr);
       } else {
         showDayDetail(app, dateStr);
       }
@@ -196,22 +234,29 @@ function renderCalendar(app) {
   });
 }
 
+const LATE_REASON_LABELS = {
+  habit: "הרגלים ישנים",
+  unforeseen: "נסיבות בלתי צפויות",
+};
+
 function showDayDetail(app, dateStr) {
   const rec = app.checkinsByDate.get(dateStr);
   const d = parseLocalDate(dateStr);
   els.dayTitle.textContent = d.toLocaleDateString("he-IL", { weekday: "long", month: "long", day: "numeric" });
+  dayDetailDate = dateStr;
 
   if (rec) {
     const time = new Date(rec.timestamp).toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" });
     if (rec.status === "on-time") {
       els.dayBody.textContent = `בזמן — הגעת בשעה ${time}.`;
     } else {
-      els.dayBody.textContent = `איחור של ${rec.minutesLate} דקות — הגעת בשעה ${time}.`;
+      const reasonLabel = LATE_REASON_LABELS[rec.lateReason];
+      els.dayBody.textContent = `איחור של ${rec.minutesLate} דקות — הגעת בשעה ${time}.${reasonLabel ? ` סיבה: ${reasonLabel}.` : ""}`;
     }
-  } else if (isScheduledDay(dateStr, app.shiftsByDate)) {
-    els.dayBody.textContent = "לא נרשם צ'ק-אין ליום זה.";
+    els.dayEdit.style.display = "block";
   } else {
     els.dayBody.textContent = "אין משמרת ביום זה.";
+    els.dayEdit.style.display = "none";
   }
   showModal(els.dayModal);
 }
@@ -257,6 +302,70 @@ async function handleDeleteShift() {
   await deleteShift(shiftEditingDate);
   hideModal(els.shiftModal);
   await refreshAll();
+}
+
+function openCheckinForm(app, dateStr) {
+  checkinEditingDate = dateStr;
+  pendingLateResult = null;
+  const existing = app.checkinsByDate.get(dateStr);
+  const shift = app.shiftsByDate.get(dateStr);
+  const d = parseLocalDate(dateStr);
+  const dateLabel = d.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
+
+  els.checkinTitle.textContent = `שעת הגעה — ${dateLabel}`;
+  els.checkinTimeStep.style.display = "block";
+  els.checkinReasonStep.style.display = "none";
+
+  let hour, minute;
+  if (existing) {
+    const t = new Date(existing.timestamp);
+    const snapped = snapToTimeOptions(`${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`);
+    hour = snapped.hour;
+    minute = snapped.minute;
+  } else {
+    const snapped = snapToTimeOptions(shift.startTime);
+    hour = snapped.hour;
+    minute = snapped.minute;
+  }
+  els.checkinHour.value = hour;
+  els.checkinMinute.value = minute;
+
+  showModal(els.checkinModal);
+}
+
+function handleCheckinSave() {
+  const d = parseLocalDate(checkinEditingDate);
+  const hour = parseInt(els.checkinHour.value, 10);
+  const minute = parseInt(els.checkinMinute.value, 10);
+  const arrivalDateTime = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0);
+  const shift = renderHome_lastApp.shiftsByDate.get(checkinEditingDate);
+  const result = computeCheckinResult(arrivalDateTime, shift, renderHome_lastApp.settings.graceMinutes);
+
+  if (result.status === "late") {
+    pendingLateResult = result;
+    els.checkinTimeStep.style.display = "none";
+    els.checkinReasonStep.style.display = "block";
+    return;
+  }
+
+  finalizeCheckin(null, result);
+}
+
+async function finalizeCheckin(lateReason, resultOverride) {
+  const result = resultOverride || pendingLateResult;
+  if (!result) return;
+  const record = { ...result };
+  if (lateReason) record.lateReason = lateReason;
+
+  await saveCheckin(record);
+  hideModal(els.checkinModal);
+  await refreshAll();
+
+  if (result.status === "on-time") {
+    celebrateOnTimeCheckin();
+  } else {
+    showLateFeedback();
+  }
 }
 
 function renderTrend(app) {

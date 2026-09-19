@@ -136,6 +136,12 @@ body {
   box-shadow: none;
 }
 
+.checkin-btn.earned-star[disabled] {
+  background: linear-gradient(145deg, #ffe27a, #d4a017);
+  box-shadow: 0 10px 30px rgba(212, 160, 23, 0.45);
+  color: #4a3800;
+}
+
 .streak-flame {
   font-size: 40px;
   line-height: 1;
@@ -401,6 +407,7 @@ body {
 }
 
 .cal-day {
+  position: relative;
   aspect-ratio: 1;
   border-radius: 8px;
   display: flex;
@@ -410,6 +417,15 @@ body {
   gap: 1px;
   color: var(--text);
   background: var(--bg);
+}
+
+.cal-day.on-time::after {
+  content: "⭐";
+  position: absolute;
+  top: 1px;
+  left: 2px;
+  font-size: 9px;
+  line-height: 1;
 }
 
 .cal-day-num {
