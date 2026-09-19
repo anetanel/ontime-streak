@@ -20,17 +20,6 @@ export function isScheduledDay(dateStr, shiftsByDate) {
 
 export function computeCheckinResult(now, shift, graceMinutes) {
   const dateStr = formatLocalDate(now);
-
-  if (!shift) {
-    return {
-      date: dateStr,
-      timestamp: now.toISOString(),
-      status: "on-time",
-      minutesLate: 0,
-      isBonusDay: true,
-    };
-  }
-
   const [h, m] = shift.startTime.split(":").map(Number);
   const deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m + graceMinutes, 0, 0);
   const isLate = now.getTime() > deadline.getTime();
@@ -40,7 +29,6 @@ export function computeCheckinResult(now, shift, graceMinutes) {
     timestamp: now.toISOString(),
     status: isLate ? "late" : "on-time",
     minutesLate,
-    isBonusDay: false,
   };
 }
 
@@ -60,7 +48,7 @@ export function computeStreak(checkinsByDate, shiftsByDate, today = new Date(), 
 
     if (scheduled) {
       const rec = checkinsByDate.get(dateStr);
-      if (rec && rec.status === "on-time" && !rec.isBonusDay) {
+      if (rec && rec.status === "on-time") {
         streak += 1;
       } else if (rec && rec.status === "late") {
         break;
@@ -97,7 +85,7 @@ export function computeLongestStreak(checkinsByDate, shiftsByDate, today = new D
     const dateStr = formatLocalDate(cursor);
     if (isScheduledDay(dateStr, shiftsByDate)) {
       const rec = checkinsByDate.get(dateStr);
-      if (rec && rec.status === "on-time" && !rec.isBonusDay) {
+      if (rec && rec.status === "on-time") {
         run += 1;
         longest = Math.max(longest, run);
       } else {

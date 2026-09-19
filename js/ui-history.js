@@ -105,7 +105,6 @@ export function renderHistory(app) {
 function classifyDay(app, dateStr, notYetResolved) {
   const scheduled = isScheduledDay(dateStr, app.shiftsByDate);
   const rec = app.checkinsByDate.get(dateStr);
-  if (rec && rec.isBonusDay) return "bonus";
   if (rec && rec.status === "on-time") return "on-time";
   if (rec && rec.status === "late") return "late";
   if (notYetResolved) return scheduled ? "future-shift" : "none";
@@ -137,10 +136,10 @@ function renderStats(app) {
     const dateStr = formatLocalDate(cursor);
     if (isScheduledDay(dateStr, app.shiftsByDate)) {
       const rec = app.checkinsByDate.get(dateStr);
-      if (rec && !rec.isBonusDay) {
+      if (rec) {
         total += 1;
         if (rec.status === "on-time") onTime += 1;
-      } else if (!rec && dateStr !== todayStr) {
+      } else if (dateStr !== todayStr) {
         total += 1;
       }
     }
@@ -204,15 +203,13 @@ function showDayDetail(app, dateStr) {
 
   if (rec) {
     const time = new Date(rec.timestamp).toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" });
-    if (rec.isBonusDay) {
-      els.dayBody.textContent = `צ'ק-אין בשעה ${time} ביום שלא הייתה בו משמרת — לא משפיע על הרצף שלך.`;
-    } else if (rec.status === "on-time") {
+    if (rec.status === "on-time") {
       els.dayBody.textContent = `בזמן — הגעת בשעה ${time}.`;
     } else {
       els.dayBody.textContent = `איחור של ${rec.minutesLate} דקות — הגעת בשעה ${time}.`;
     }
   } else if (isScheduledDay(dateStr, app.shiftsByDate)) {
-    els.dayBody.textContent = "לא נרשם צ'ק-אין — נספר כפספוס.";
+    els.dayBody.textContent = "לא נרשם צ'ק-אין ליום זה.";
   } else {
     els.dayBody.textContent = "אין משמרת ביום זה.";
   }
@@ -264,7 +261,7 @@ async function handleDeleteShift() {
 
 function renderTrend(app) {
   const recent = app.checkins
-    .filter((c) => !c.isBonusDay)
+    .slice()
     .sort((a, b) => (a.date < b.date ? -1 : 1))
     .slice(-14);
 

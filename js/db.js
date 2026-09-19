@@ -44,7 +44,7 @@ function wrap(request) {
 
 export const DEFAULT_SETTINGS = {
   id: "settings",
-  graceMinutes: 10,
+  graceMinutes: 5,
   soundEnabled: true,
   themePreference: "system",
   lastBackupAt: null,

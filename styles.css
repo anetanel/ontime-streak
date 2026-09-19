@@ -131,6 +131,11 @@ body {
   box-shadow: 0 10px 30px rgba(255, 59, 48, 0.3);
 }
 
+.checkin-btn.no-shift[disabled] {
+  background: linear-gradient(145deg, #c7c7cc, #9c9ca3);
+  box-shadow: none;
+}
+
 .streak-flame {
   font-size: 40px;
   line-height: 1;
@@ -422,7 +427,6 @@ body {
 .cal-day.on-time { background: rgba(52, 199, 89, 0.75); color: #fff; }
 .cal-day.late { background: rgba(255, 59, 48, 0.75); color: #fff; }
 .cal-day.missed { background: var(--border); color: var(--text-dim); }
-.cal-day.bonus { background: rgba(10, 132, 255, 0.5); color: #fff; }
 .cal-day.future-shift { background: rgba(175, 82, 222, 0.45); color: #fff; }
 .cal-day.empty { visibility: hidden; }
 
@@ -455,7 +459,6 @@ body {
 .cal-dot.on-time { background: rgba(52, 199, 89, 0.9); }
 .cal-dot.late { background: rgba(255, 59, 48, 0.9); }
 .cal-dot.missed { background: var(--border); }
-.cal-dot.bonus { background: rgba(10, 132, 255, 0.8); }
 .cal-dot.future-shift { background: rgba(175, 82, 222, 0.8); }
 
 .month-nav {
@@ -472,6 +475,7 @@ body {
   color: var(--accent);
   cursor: pointer;
   padding: 4px 10px;
+  direction: ltr;
 }
 
 .cal-today-btn {
