@@ -167,7 +167,10 @@ function renderCalendar(app) {
     const dateStr = formatLocalDate(d);
     const notYetResolved = dateStr >= todayStr;
     const cls = classifyDay(app, dateStr, notYetResolved);
-    html += `<div class="cal-day ${cls}" data-date="${dateStr}">${day}</div>`;
+    const todayCls = dateStr === todayStr ? " today" : "";
+    const shift = app.shiftsByDate.get(dateStr);
+    const timeHtml = shift ? `<span class="cal-day-time">${shift.startTime}</span>` : "";
+    html += `<div class="cal-day ${cls}${todayCls}" data-date="${dateStr}"><span class="cal-day-num">${day}</span>${timeHtml}</div>`;
   }
   els.calGrid.innerHTML = html;
 
