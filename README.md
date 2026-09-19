@@ -13,10 +13,11 @@ Live app: `https://anetanel.github.io/ontime-streak/`
 
 ## Everyday use (no tech knowledge needed)
 
-- **Home**: tap "I'm at Work" when you arrive. On time = confetti/fireworks. Late = a gentle reset message.
-- **History**: calendar of on-time/late days, streak stats, and an arrival-time trend chart.
+- **Home**: tap "I'm at Work" when you arrive. On time = confetti/fireworks. Late = a gentle reset message. If no shift was entered for today, checking in doesn't affect the streak either way.
+- **Shifts**: since this is part-time, shift-based work, there's no fixed weekly pattern — tap "+ Add Shift" to enter each upcoming work day's date and start time. A day with no shift entered isn't counted as a scheduled work day at all.
+- **History**: calendar of on-time/late/missed/no-shift days, streak stats, and an arrival-time trend chart.
 - **Rewards**: tap "+ Add Reward" to upload a photo of a favorite musician and set how many days in a row unlocks it. Tap the pencil on any reward to edit or delete it. No code, ever — this screen is the entire way to customize rewards.
-- **Settings**: change your expected start time, grace period, and which days you work. Also where you back up your data (Export Backup) — do this occasionally and save the file to Files/iCloud or AirDrop it to someone, so history survives a lost phone or a cleared browser.
+- **Settings**: grace period (how many minutes late still counts as on time), celebration sound, and where you back up your data (Export Backup) — do this occasionally and save the file to Files/iCloud or AirDrop it to someone, so history survives a lost phone or a cleared browser.
 
 ## For the developer (redeploying changes)
 
@@ -34,7 +35,7 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 **Important:** whenever you change any file that the app loads (HTML/CSS/JS/icons), bump the cache name in `sw.js`:
 
 ```js
-const CACHE_NAME = "ontime-streak-v2"; // increment this
+const CACHE_NAME = "ontime-streak-v3"; // increment this
 ```
 
 This is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely.
@@ -54,5 +55,5 @@ Real installability, offline behavior, and safe-area layout can only be verified
 - No reminder notifications — iOS Safari PWAs can't reliably send background push without a paid service. Use a regular iPhone alarm as the reminder to open the app.
 - No cloud sync between devices. Moving to a new phone requires Export Backup on the old one and Import Backup on the new one.
 - No backfilling a missed day — this keeps the streak meaningful, but means a forgotten check-in can't be corrected after the fact.
-- Changing the weekly work schedule only affects streak calculations going forward, not past dates.
+- Shifts need to be entered before the day happens — there's no automatic recurring pattern, since the work schedule is irregular. A shift added after the fact for a past date will still be picked up by the streak/history calculations, but won't retroactively help if a check-in was already missed.
 - Relies on the iPhone's system clock for on-time/late calculation.

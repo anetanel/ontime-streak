@@ -10,6 +10,7 @@ export function initHome() {
   els.status = document.getElementById("checkin-status");
   els.currentStreak = document.getElementById("home-current-streak");
   els.longestStreak = document.getElementById("home-longest-streak");
+  els.shiftInfo = document.getElementById("home-shift-info");
   els.rewardCard = document.getElementById("home-reward-card");
   els.canvas = document.getElementById("celebration-canvas");
   els.revealModal = document.getElementById("reveal-modal");
@@ -28,7 +29,8 @@ async function handleCheckin() {
   const existing = await getCheckin(today);
   if (existing) return;
 
-  const result = computeCheckinResult(new Date(), App.settings);
+  const todayShift = App.shiftsByDate.get(today);
+  const result = computeCheckinResult(new Date(), todayShift, App.settings.graceMinutes);
   await saveCheckin(result);
   await refreshAll();
 
@@ -66,7 +68,7 @@ function showBonusFeedback() {
   els.revealPlaceholder.style.display = "flex";
   els.revealPlaceholder.textContent = "👋";
   els.revealTitle.textContent = "יופי!";
-  els.revealSub.textContent = "היום הזה לא יום עבודה קבוע — הצ'ק-אין הזה לא משפיע על הרצף שלך.";
+  els.revealSub.textContent = "לא נקבעה משמרת להיום — הצ'ק-אין הזה לא משפיע על הרצף שלך.";
   showModal(els.revealModal);
 }
 
@@ -97,7 +99,7 @@ export function renderHome(app) {
     els.btn.disabled = true;
     if (todayRecord.isBonusDay) {
       els.btn.textContent = "נרשם ✓";
-      els.status.textContent = "צ'ק-אין בונוס — לא יום עבודה קבוע";
+      els.status.textContent = "צ'ק-אין בונוס — לא נקבעה משמרת להיום";
     } else if (todayRecord.status === "on-time") {
       els.btn.textContent = "הגעת ✓";
       els.status.textContent = `הגעת בשעה ${new Date(todayRecord.timestamp).toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" })}`;
@@ -110,6 +112,15 @@ export function renderHome(app) {
     els.btn.disabled = false;
     els.btn.textContent = "הגעתי לעבודה";
     els.status.textContent = "";
+  }
+
+  if (todayRecord) {
+    els.shiftInfo.textContent = "";
+  } else {
+    const todayShift = app.shiftsByDate.get(today);
+    els.shiftInfo.textContent = todayShift
+      ? `משמרת היום מתחילה בשעה ${todayShift.startTime}`
+      : "אין משמרת מתוכננת להיום";
   }
 
   const active = getActiveReward(app.rewards, app.currentStreak);

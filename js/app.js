@@ -1,8 +1,9 @@
-import { getSettings, getAllCheckins, getAllRewards, saveStreakState, getStreakState } from "./db.js";
+import { getSettings, getAllCheckins, getAllRewards, getAllShifts, saveStreakState, getStreakState } from "./db.js";
 import { formatLocalDate, computeStreak, computeLongestStreak } from "./streak.js";
 import { initHome, renderHome } from "./ui-home.js";
 import { initHistory, renderHistory } from "./ui-history.js";
 import { initRewards, renderRewards } from "./ui-rewards.js";
+import { initShifts, renderShifts } from "./ui-shifts.js";
 import { initSettings, renderSettings } from "./ui-settings.js";
 
 export const App = {
@@ -10,15 +11,18 @@ export const App = {
   checkins: [],
   checkinsByDate: new Map(),
   rewards: [],
+  shifts: [],
+  shiftsByDate: new Map(),
   currentStreak: 0,
   longestStreak: 0,
 };
 
 export async function loadAll() {
-  const [settings, checkins, rewards, streakState] = await Promise.all([
+  const [settings, checkins, rewards, shifts, streakState] = await Promise.all([
     getSettings(),
     getAllCheckins(),
     getAllRewards(),
+    getAllShifts(),
     getStreakState(),
   ]);
 
@@ -26,10 +30,12 @@ export async function loadAll() {
   App.checkins = checkins;
   App.checkinsByDate = new Map(checkins.map((c) => [c.date, c]));
   App.rewards = rewards;
+  App.shifts = shifts;
+  App.shiftsByDate = new Map(shifts.map((s) => [s.date, s]));
 
   const now = new Date();
-  const current = computeStreak(App.checkinsByDate, settings.weeklySchedule, now);
-  const longestComputed = computeLongestStreak(App.checkinsByDate, settings.weeklySchedule, now);
+  const current = computeStreak(App.checkinsByDate, App.shiftsByDate, now);
+  const longestComputed = computeLongestStreak(App.checkinsByDate, App.shiftsByDate, now);
   const longest = Math.max(streakState.longestStreak || 0, longestComputed, current);
 
   App.currentStreak = current;
@@ -47,6 +53,7 @@ export async function refreshAll() {
   renderHome(App);
   renderHistory(App);
   renderRewards(App);
+  renderShifts(App);
   renderSettings(App);
 }
 
@@ -84,6 +91,7 @@ async function boot() {
   initHome();
   initHistory();
   initRewards();
+  initShifts();
   initSettings();
   await refreshAll();
 }

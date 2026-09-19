@@ -1,5 +1,3 @@
-const DOW_KEYS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-
 export function formatLocalDate(d) {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -12,41 +10,53 @@ export function parseLocalDate(dateStr) {
   return new Date(y, m - 1, d);
 }
 
-export function isScheduledDay(dateStr, weeklySchedule) {
-  const date = parseLocalDate(dateStr);
-  const key = DOW_KEYS[date.getDay()];
-  return !!weeklySchedule[key];
+/**
+ * shiftsByDate: Map<dateStr, shiftRecord> — a day is a scheduled work day
+ * if and only if a shift has been entered for it.
+ */
+export function isScheduledDay(dateStr, shiftsByDate) {
+  return shiftsByDate.has(dateStr);
 }
 
-export function computeCheckinResult(now, settings) {
+export function computeCheckinResult(now, shift, graceMinutes) {
   const dateStr = formatLocalDate(now);
-  const [h, m] = settings.expectedStartTime.split(":").map(Number);
-  const deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m + settings.graceMinutes, 0, 0);
+
+  if (!shift) {
+    return {
+      date: dateStr,
+      timestamp: now.toISOString(),
+      status: "on-time",
+      minutesLate: 0,
+      isBonusDay: true,
+    };
+  }
+
+  const [h, m] = shift.startTime.split(":").map(Number);
+  const deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m + graceMinutes, 0, 0);
   const isLate = now.getTime() > deadline.getTime();
   const minutesLate = isLate ? Math.round((now.getTime() - deadline.getTime()) / 60000) : 0;
-  const scheduled = isScheduledDay(dateStr, settings.weeklySchedule);
   return {
     date: dateStr,
     timestamp: now.toISOString(),
     status: isLate ? "late" : "on-time",
     minutesLate,
-    isBonusDay: !scheduled,
+    isBonusDay: false,
   };
 }
 
 /**
  * Walks backward from today recomputing the streak.
  * checkinsByDate: Map<dateStr, checkinRecord>
+ * shiftsByDate: Map<dateStr, shiftRecord>
  */
-export function computeStreak(checkinsByDate, weeklySchedule, today = new Date(), maxDays = 3650) {
+export function computeStreak(checkinsByDate, shiftsByDate, today = new Date(), maxDays = 3650) {
   let streak = 0;
-  let longestSeenInWalk = 0;
   let cursor = new Date(today.getFullYear(), today.getMonth(), today.getDate());
   let isToday = true;
 
   for (let i = 0; i < maxDays; i++) {
     const dateStr = formatLocalDate(cursor);
-    const scheduled = isScheduledDay(dateStr, weeklySchedule);
+    const scheduled = isScheduledDay(dateStr, shiftsByDate);
 
     if (scheduled) {
       const rec = checkinsByDate.get(dateStr);
@@ -71,7 +81,7 @@ export function computeStreak(checkinsByDate, weeklySchedule, today = new Date()
   return streak;
 }
 
-export function computeLongestStreak(checkinsByDate, weeklySchedule, today = new Date(), maxDays = 3650) {
+export function computeLongestStreak(checkinsByDate, shiftsByDate, today = new Date(), maxDays = 3650) {
   // Walk forward from the earliest record to today, tracking the best run.
   const dates = Array.from(checkinsByDate.keys()).sort();
   if (dates.length === 0) return 0;
@@ -85,7 +95,7 @@ export function computeLongestStreak(checkinsByDate, weeklySchedule, today = new
 
   for (let i = 0; i < maxDays && cursor.getTime() <= end.getTime(); i++) {
     const dateStr = formatLocalDate(cursor);
-    if (isScheduledDay(dateStr, weeklySchedule)) {
+    if (isScheduledDay(dateStr, shiftsByDate)) {
       const rec = checkinsByDate.get(dateStr);
       if (rec && rec.status === "on-time" && !rec.isBonusDay) {
         run += 1;

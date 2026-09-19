@@ -62,7 +62,7 @@ export function renderHistory(app) {
 }
 
 function classifyDay(app, dateStr, isFuture) {
-  const scheduled = isScheduledDay(dateStr, app.settings.weeklySchedule);
+  const scheduled = isScheduledDay(dateStr, app.shiftsByDate);
   const rec = app.checkinsByDate.get(dateStr);
   if (rec && rec.isBonusDay) return "bonus";
   if (rec && rec.status === "on-time") return "on-time";
@@ -95,7 +95,7 @@ function renderStats(app) {
   const cursor = new Date(start);
   while (formatLocalDate(cursor) <= todayStr) {
     const dateStr = formatLocalDate(cursor);
-    if (isScheduledDay(dateStr, app.settings.weeklySchedule)) {
+    if (isScheduledDay(dateStr, app.shiftsByDate)) {
       const rec = app.checkinsByDate.get(dateStr);
       if (rec && !rec.isBonusDay) {
         total += 1;
@@ -153,16 +153,19 @@ function showDayDetail(app, dateStr) {
   if (rec) {
     const time = new Date(rec.timestamp).toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" });
     if (rec.isBonusDay) {
-      els.dayBody.textContent = `צ'ק-אין בשעה ${time} ביום שאינו יום עבודה קבוע — לא משפיע על הרצף שלך.`;
+      els.dayBody.textContent = `צ'ק-אין בשעה ${time} ביום שלא הייתה בו משמרת — לא משפיע על הרצף שלך.`;
     } else if (rec.status === "on-time") {
       els.dayBody.textContent = `בזמן — הגעת בשעה ${time}.`;
     } else {
       els.dayBody.textContent = `איחור של ${rec.minutesLate} דקות — הגעת בשעה ${time}.`;
     }
-  } else if (isScheduledDay(dateStr, app.settings.weeklySchedule)) {
-    els.dayBody.textContent = dateStr > formatLocalDate(new Date()) ? "יום עבודה עתידי." : "לא נרשם צ'ק-אין — נספר כפספוס.";
+  } else if (isScheduledDay(dateStr, app.shiftsByDate)) {
+    const shift = app.shiftsByDate.get(dateStr);
+    els.dayBody.textContent = dateStr > formatLocalDate(new Date())
+      ? `משמרת מתוכננת בשעה ${shift.startTime}.`
+      : "לא נרשם צ'ק-אין — נספר כפספוס.";
   } else {
-    els.dayBody.textContent = "לא יום עבודה קבוע.";
+    els.dayBody.textContent = "אין משמרת ביום זה.";
   }
   showModal(els.dayModal);
 }
@@ -180,25 +183,20 @@ function renderTrend(app) {
   }
   els.trendEmpty.style.display = "none";
 
-  const [gh, gm] = app.settings.expectedStartTime.split(":").map(Number);
-  const deadlineMinutes = gh * 60 + gm + app.settings.graceMinutes;
-
   const minutesOf = (rec) => {
     const t = new Date(rec.timestamp);
     return t.getHours() * 60 + t.getMinutes();
   };
 
   const values = recent.map(minutesOf);
-  const minY = Math.min(...values, deadlineMinutes) - 10;
-  const maxY = Math.max(...values, deadlineMinutes) + 10;
+  const minY = Math.min(...values) - 10;
+  const maxY = Math.max(...values) + 10;
   const w = 300, h = 140, padX = 10, padY = 10;
 
   const xFor = (i) => padX + ((recent.length - 1 - i) / (recent.length - 1)) * (w - padX * 2);
   const yFor = (m) => h - padY - ((m - minY) / (maxY - minY)) * (h - padY * 2);
 
-  const deadlineY = yFor(deadlineMinutes);
-  let svg = `<line x1="${padX}" y1="${deadlineY}" x2="${w - padX}" y2="${deadlineY}" stroke="var(--accent)" stroke-width="1" stroke-dasharray="4,3" opacity="0.6" />`;
-
+  let svg = "";
   let path = "";
   recent.forEach((rec, i) => {
     const x = xFor(i);

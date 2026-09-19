@@ -1,5 +1,5 @@
 const DB_NAME = "ontimeStreakDB";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbPromise = null;
 
@@ -21,6 +21,9 @@ function openDB() {
       if (!db.objectStoreNames.contains("meta")) {
         db.createObjectStore("meta", { keyPath: "id" });
       }
+      if (!db.objectStoreNames.contains("shifts")) {
+        db.createObjectStore("shifts", { keyPath: "date" });
+      }
     };
     req.onsuccess = () => resolve(req.result);
     req.onerror = () => reject(req.error);
@@ -41,9 +44,7 @@ function wrap(request) {
 
 export const DEFAULT_SETTINGS = {
   id: "settings",
-  expectedStartTime: "09:00",
   graceMinutes: 10,
-  weeklySchedule: { sun: true, mon: true, tue: true, wed: true, thu: true, fri: true, sat: false },
   soundEnabled: true,
   themePreference: "system",
   lastBackupAt: null,
@@ -93,6 +94,26 @@ export async function deleteReward(id) {
   await wrap(store.delete(id));
 }
 
+export async function getAllShifts() {
+  const store = await tx("shifts", "readonly");
+  return wrap(store.getAll());
+}
+
+export async function getShift(date) {
+  const store = await tx("shifts", "readonly");
+  return wrap(store.get(date));
+}
+
+export async function saveShift(shift) {
+  const store = await tx("shifts", "readwrite");
+  await wrap(store.put(shift));
+}
+
+export async function deleteShift(date) {
+  const store = await tx("shifts", "readwrite");
+  await wrap(store.delete(date));
+}
+
 export async function getStreakState() {
   const store = await tx("meta", "readonly");
   const result = await wrap(store.get("streakState"));
@@ -105,10 +126,11 @@ export async function saveStreakState(state) {
 }
 
 export async function exportAllData() {
-  const [settings, checkins, rewards, streakState] = await Promise.all([
+  const [settings, checkins, rewards, shifts, streakState] = await Promise.all([
     getSettings(),
     getAllCheckins(),
     getAllRewards(),
+    getAllShifts(),
     getStreakState(),
   ]);
   return {
@@ -117,6 +139,7 @@ export async function exportAllData() {
     settings,
     checkins,
     rewards,
+    shifts,
     streakState,
   };
 }
@@ -137,12 +160,18 @@ export async function importAllData(data) {
     await wrap(rewardsStore.put(rec));
   }
 
+  const shiftsStore = await tx("shifts", "readwrite");
+  await wrap(shiftsStore.clear());
+  for (const rec of data.shifts || []) {
+    await wrap(shiftsStore.put(rec));
+  }
+
   const metaStore = await tx("meta", "readwrite");
   await wrap(metaStore.put({ ...(data.streakState || {}), id: "streakState" }));
 }
 
 export async function resetAllData() {
-  const stores = ["settings", "checkins", "rewards", "meta"];
+  const stores = ["settings", "checkins", "rewards", "shifts", "meta"];
   for (const name of stores) {
     const store = await tx(name, "readwrite");
     await wrap(store.clear());

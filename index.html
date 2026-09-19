@@ -23,6 +23,7 @@
     <div class="card" style="text-align:center;">
       <button id="checkin-btn" class="checkin-btn">הגעתי לעבודה</button>
       <div id="checkin-status" class="stat-label"></div>
+      <div id="home-shift-info" class="stat-label"></div>
     </div>
 
     <div class="card">
@@ -90,6 +91,15 @@
     </div>
   </section>
 
+  <section id="screen-shifts" class="screen">
+    <h1 class="topbar">משמרות</h1>
+    <div class="card">
+      <button class="btn btn-primary" id="add-shift-btn">+ הוספת משמרת</button>
+      <div id="shifts-list"></div>
+      <div id="shifts-empty" class="empty-hint" style="display:none;">עדיין לא נוספו משמרות עתידיות. הוסיפי תאריך ושעת התחלה לכל יום עבודה.</div>
+    </div>
+  </section>
+
   <section id="screen-rewards" class="screen">
     <h1 class="topbar">פרסים</h1>
     <div class="card">
@@ -103,16 +113,11 @@
     <h1 class="topbar">הגדרות</h1>
 
     <div class="card">
-      <h3>לוח עבודה</h3>
-      <div class="field">
-        <label for="set-start-time">שעת התחלה צפויה</label>
-        <input type="time" id="set-start-time">
-      </div>
+      <h3>זמן חסד</h3>
       <div class="field">
         <label for="set-grace">זמן חסד (בדקות)</label>
         <input type="number" id="set-grace" min="0" max="120" step="1">
       </div>
-      <div id="schedule-toggles"></div>
     </div>
 
     <div class="card">
@@ -144,7 +149,8 @@
 
   <nav class="tabbar">
     <button data-screen="home" class="active"><span class="icon">🏠</span>בית</button>
-    <button data-screen="history"><span class="icon">📅</span>היסטוריה</button>
+    <button data-screen="shifts"><span class="icon">📅</span>משמרות</button>
+    <button data-screen="history"><span class="icon">📈</span>היסטוריה</button>
     <button data-screen="rewards"><span class="icon">🎵</span>פרסים</button>
     <button data-screen="settings"><span class="icon">⚙️</span>הגדרות</button>
   </nav>
@@ -183,6 +189,24 @@
     <button class="btn btn-primary" id="reward-form-save">שמירה</button>
     <button class="btn btn-secondary" id="reward-form-delete" style="display:none;">מחיקת פרס</button>
     <button class="btn btn-secondary" id="reward-form-cancel">ביטול</button>
+  </div>
+</div>
+
+<div id="shift-form-modal" class="modal-backdrop hidden">
+  <div class="modal-sheet">
+    <h2 id="shift-form-title">הוספת משמרת</h2>
+    <div class="field">
+      <label for="shift-form-date">תאריך</label>
+      <input type="date" id="shift-form-date">
+    </div>
+    <div class="field">
+      <label for="shift-form-time">שעת התחלה</label>
+      <input type="time" id="shift-form-time">
+    </div>
+    <div id="shift-form-error" class="stat-label" style="color:var(--danger); display:none; margin-bottom:10px;"></div>
+    <button class="btn btn-primary" id="shift-form-save">שמירה</button>
+    <button class="btn btn-secondary" id="shift-form-delete" style="display:none;">מחיקת משמרת</button>
+    <button class="btn btn-secondary" id="shift-form-cancel">ביטול</button>
   </div>
 </div>
 

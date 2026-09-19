@@ -2,23 +2,11 @@ import { saveSettings, resetAllData } from "./db.js";
 import { App, refreshAll } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
 
-const DOW = [
-  { key: "sun", label: "ראשון" },
-  { key: "mon", label: "שני" },
-  { key: "tue", label: "שלישי" },
-  { key: "wed", label: "רביעי" },
-  { key: "thu", label: "חמישי" },
-  { key: "fri", label: "שישי" },
-  { key: "sat", label: "שבת" },
-];
-
 let els = {};
 let saveTimer = null;
 
 export function initSettings() {
-  els.startTime = document.getElementById("set-start-time");
   els.grace = document.getElementById("set-grace");
-  els.scheduleToggles = document.getElementById("schedule-toggles");
   els.sound = document.getElementById("set-sound");
   els.banner = document.getElementById("backup-banner");
   els.exportBtn = document.getElementById("export-btn");
@@ -27,25 +15,8 @@ export function initSettings() {
   els.lastBackupLabel = document.getElementById("last-backup-label");
   els.resetBtn = document.getElementById("reset-btn");
 
-  els.scheduleToggles.innerHTML = DOW.map(
-    (d) => `
-    <div class="row-toggle">
-      <span>${d.label}</span>
-      <label class="switch">
-        <input type="checkbox" data-dow="${d.key}">
-        <span class="track"></span>
-        <span class="thumb"></span>
-      </label>
-    </div>
-  `
-  ).join("");
-
-  els.startTime.addEventListener("change", debounceSaveSettings);
   els.grace.addEventListener("change", debounceSaveSettings);
   els.sound.addEventListener("change", debounceSaveSettings);
-  els.scheduleToggles.querySelectorAll("input[data-dow]").forEach((input) => {
-    input.addEventListener("change", debounceSaveSettings);
-  });
 
   els.exportBtn.addEventListener("click", handleExport);
   els.importBtn.addEventListener("click", () => els.importFile.click());
@@ -59,17 +30,10 @@ function debounceSaveSettings() {
 }
 
 async function commitSettings() {
-  const weeklySchedule = {};
-  els.scheduleToggles.querySelectorAll("input[data-dow]").forEach((input) => {
-    weeklySchedule[input.dataset.dow] = input.checked;
-  });
-
   const settings = {
     ...App.settings,
-    expectedStartTime: els.startTime.value || App.settings.expectedStartTime,
     graceMinutes: parseInt(els.grace.value, 10) || 0,
     soundEnabled: els.sound.checked,
-    weeklySchedule,
   };
 
   await saveSettings(settings);
@@ -108,13 +72,8 @@ async function handleReset() {
 }
 
 export function renderSettings(app) {
-  els.startTime.value = app.settings.expectedStartTime;
   els.grace.value = app.settings.graceMinutes;
   els.sound.checked = app.settings.soundEnabled;
-
-  els.scheduleToggles.querySelectorAll("input[data-dow]").forEach((input) => {
-    input.checked = !!app.settings.weeklySchedule[input.dataset.dow];
-  });
 
   if (app.settings.lastBackupAt) {
     const d = new Date(app.settings.lastBackupAt);
