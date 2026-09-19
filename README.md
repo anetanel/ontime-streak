@@ -36,10 +36,10 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v20"; // increment this
+const CACHE_NAME = "ontime-streak-v21"; // increment this
 
 // js/version.js
-export const APP_VERSION = "20"; // ...and this, to the same number
+export const APP_VERSION = "21"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.
@@ -67,15 +67,20 @@ This is enough to exercise the real app logic end-to-end — IndexedDB, the serv
 
 **While iterating locally**, the service worker's cache-first strategy means it'll happily keep serving a stale copy of a file you just edited. Keep the browser's DevTools open with Network → "Disable cache" checked, or just use a private/incognito window, so every reload picks up your latest changes.
 
-**Testing the prize system without waiting real days:** open the browser console and use `window.__test`, defined in `js/devtools.js` (never exposed anywhere she'd stumble into it, but also never hidden — it's plain code, not a security boundary):
+**Testing the prize/confetti system without waiting real days:** open the browser console and use `window.__test`, defined in `js/devtools.js` (never exposed anywhere she'd stumble into it, but also never hidden — it's plain code, not a security boundary):
 
 ```js
-__test.setStreak(6)       // wipes local data and fakes a 6-day streak ending yesterday,
-                           // with today's shift ready so tapping "הגעתי לעבודה" reaches day 7
-__test.previewPrize(30)   // shows the actual reveal modal for whatever day 30 would award,
-                           // picked from the real manifest, without saving or touching any data
-__test.reset()            // wipes all local data back to empty
+__test.setStreak(6)                 // wipes local data and fakes a 6-day streak ending yesterday,
+                                     // with today's shift ready so tapping "הגעתי לעבודה" reaches day 7
+__test.previewPrize(30)             // shows the actual reveal modal for whatever day 30 would award,
+                                     // picked from the real manifest, without saving or touching any data
+__test.previewCelebration(45)       // plays the confetti/fireworks tier a 45-day streak would trigger
+__test.previewCelebration("max")    // or name a tier directly: small, medium, fireworks, bigFireworks, max
+__test.previewAllCelebrations()     // plays all 5 tiers back to back, a few seconds apart
+__test.reset()                      // wipes all local data back to empty
 ```
+
+`previewCelebration`/`previewAllCelebrations` just call the real confetti engine directly — nothing is saved, so they're safe to run anytime, including on her real phone if you ever wanted to show her what a tier looks like without touching her data.
 
 These are destructive to whatever's in local storage — only run them against the local dev server or a throwaway browser profile, never against her real installed app.
 

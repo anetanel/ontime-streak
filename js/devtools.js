@@ -1,10 +1,13 @@
 // Testing-only helpers, exposed as window.__test in the browser console.
 // Never used by the real app UI — she will never see or need these.
 import { App, refreshAll } from "./app.js";
-import { formatLocalDate } from "./streak.js";
+import { formatLocalDate, getTierForStreak } from "./streak.js";
 import { saveCheckin, saveShift, resetAllData } from "./db.js";
 import { findMatchingTier, pickRandomPrize } from "./prizes.js";
 import { showPrizeReveal } from "./ui-home.js";
+import { celebrate } from "./confetti.js";
+
+const CELEBRATION_TIERS = ["small", "medium", "fireworks", "bigFireworks", "max"];
 
 async function setStreak(days) {
   if (!Number.isInteger(days) || days < 0) {
@@ -52,17 +55,49 @@ function previewPrize(streakDay) {
   showPrizeReveal({ tierKey: tier.key, prizeFile: prize.file, prizeTitle: prize.title, streakDay });
 }
 
+function previewCelebration(tierOrStreak) {
+  let tier;
+  if (typeof tierOrStreak === "string") {
+    if (!CELEBRATION_TIERS.includes(tierOrStreak)) {
+      console.log(`[test] Unknown tier "${tierOrStreak}". Use one of: ${CELEBRATION_TIERS.join(", ")}, or pass a streak number instead.`);
+      return;
+    }
+    tier = tierOrStreak;
+  } else if (Number.isInteger(tierOrStreak) && tierOrStreak >= 1) {
+    tier = getTierForStreak(tierOrStreak);
+  } else {
+    console.log('[test] Usage: __test.previewCelebration(45) or __test.previewCelebration("fireworks")');
+    return;
+  }
+
+  const canvas = document.getElementById("celebration-canvas");
+  const soundEnabled = App.settings ? App.settings.soundEnabled : true;
+  console.log(`[test] Playing "${tier}" tier celebration${typeof tierOrStreak === "number" ? ` (streak day ${tierOrStreak})` : ""}.`);
+  celebrate(canvas, tier, soundEnabled);
+}
+
+function previewAllCelebrations() {
+  const gapMs = 4000; // generous fixed gap; the heavier tiers run up to ~6.5s themselves
+  CELEBRATION_TIERS.forEach((tier, i) => {
+    setTimeout(() => previewCelebration(tier), i * gapMs);
+  });
+  console.log(`[test] Playing all tiers back to back, ${gapMs / 1000}s apart: ${CELEBRATION_TIERS.join(" -> ")}`);
+}
+
 async function reset() {
   await resetAllData();
   await refreshAll();
   console.log("[test] All data wiped.");
 }
 
-window.__test = { setStreak, previewPrize, reset };
+window.__test = { setStreak, previewPrize, previewCelebration, previewAllCelebrations, reset };
 console.log(
   "%cOn-Time Streak test tools (window.__test) — never run these on her real phone:",
   "font-weight:bold",
-  "\n  __test.setStreak(n)     wipes data and fakes an n-day streak ending yesterday",
-  "\n  __test.previewPrize(n)  shows the reveal for whatever day n would award, without saving anything",
-  "\n  __test.reset()          wipes all data"
+  "\n  __test.setStreak(n)              wipes data and fakes an n-day streak ending yesterday",
+  "\n  __test.previewPrize(n)           shows the reveal for whatever day n would award, without saving anything",
+  '\n  __test.previewCelebration(n|"tier")  plays the confetti/fireworks for a streak day or an explicit tier name',
+  "\n                                    tiers: " + CELEBRATION_TIERS.join(", "),
+  "\n  __test.previewAllCelebrations()  plays all 5 tiers back to back",
+  "\n  __test.reset()                   wipes all data"
 );
