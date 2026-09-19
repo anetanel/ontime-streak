@@ -1,10 +1,11 @@
 import { getCheckin, saveCheckin } from "./db.js";
-import { computeCheckinResult, getTierForStreak, formatLocalDate } from "./streak.js";
+import { computeCheckinResult, getTierForStreak, formatLocalDate, isLateExemptionAvailable } from "./streak.js";
 import { celebrate } from "./confetti.js";
 import { evaluateAndAwardPrize, getTierByKey, daysUntilNextPrize } from "./prizes.js";
 import { App, refreshAll, showModal, hideModal } from "./app.js";
 
 let els = {};
+let reasonResolve = null;
 
 export function initHome() {
   els.btn = document.getElementById("checkin-btn");
@@ -22,8 +23,59 @@ export function initHome() {
   els.revealSub = document.getElementById("reveal-sub");
   els.revealClose = document.getElementById("reveal-close");
 
+  els.reasonModal = document.getElementById("late-reason-modal");
+  els.reasonNote = document.getElementById("late-reason-note");
+  els.reasonHabit = document.getElementById("late-reason-habit");
+  els.reasonUnforeseen = document.getElementById("late-reason-unforeseen");
+  els.reasonCancel = document.getElementById("late-reason-cancel");
+
   els.btn.addEventListener("click", handleCheckin);
   els.revealClose.addEventListener("click", () => hideModal(els.revealModal));
+
+  els.reasonHabit.addEventListener("click", () => resolveLateReason("habit"));
+  els.reasonUnforeseen.addEventListener("click", () => resolveLateReason("unforeseen"));
+  els.reasonCancel.addEventListener("click", () => resolveLateReason(null));
+}
+
+function resolveLateReason(value) {
+  hideModal(els.reasonModal);
+  if (reasonResolve) {
+    const resolve = reasonResolve;
+    reasonResolve = null;
+    resolve(value);
+  }
+}
+
+function promptLateReason(dateStr) {
+  const available = isLateExemptionAvailable(App.checkinsByDate, App.shiftsByDate, dateStr);
+  els.reasonNote.textContent = available
+    ? 'בחירת "נסיבות מיוחדות" תשמור על הרצף הפעם.'
+    : "כבר נעשה שימוש באפשרות הזו ברצף הנוכחי — הפעם האיחור ישפיע על הרצף.";
+  showModal(els.reasonModal);
+  return new Promise((resolve) => {
+    reasonResolve = (value) => resolve({ reason: value, exempted: value === "unforeseen" && available });
+  });
+}
+
+export async function commitCheckinResult(result) {
+  let finalResult = result;
+  let exempted = false;
+  if (result.status === "late") {
+    const choice = await promptLateReason(result.date);
+    if (choice.reason === null) return false;
+    finalResult = { ...result, lateReason: choice.reason };
+    exempted = choice.exempted;
+  }
+
+  await saveCheckin(finalResult);
+  await refreshAll();
+
+  if (finalResult.status === "on-time") {
+    await celebrateOnTimeCheckin(finalResult.date);
+  } else {
+    showLateFeedback(exempted);
+  }
+  return true;
 }
 
 async function handleCheckin() {
@@ -35,23 +87,21 @@ async function handleCheckin() {
   if (!todayShift) return;
 
   const result = computeCheckinResult(new Date(), todayShift, App.settings.graceMinutes);
-  await saveCheckin(result);
-  await refreshAll();
-
-  if (result.status === "late") {
-    showLateFeedback();
-    return;
-  }
-
-  await celebrateOnTimeCheckin(today);
+  await commitCheckinResult(result);
 }
 
-export function showLateFeedback() {
+function showLateFeedback(exempted) {
   els.revealImg.style.display = "none";
   els.revealPlaceholder.style.display = "flex";
-  els.revealPlaceholder.textContent = "😌";
-  els.revealTitle.textContent = "זה בסדר";
-  els.revealSub.textContent = "האיחור הזה משפיע על הרצף שלך.";
+  if (exempted) {
+    els.revealPlaceholder.textContent = "🙌";
+    els.revealTitle.textContent = "הרצף נשמר!";
+    els.revealSub.textContent = "האיחור הזה לא נספר הפעם, בזכות הפטור החד-פעמי.";
+  } else {
+    els.revealPlaceholder.textContent = "😌";
+    els.revealTitle.textContent = "זה בסדר";
+    els.revealSub.textContent = "האיחור הזה משפיע על הרצף שלך.";
+  }
   showModal(els.revealModal);
 }
 

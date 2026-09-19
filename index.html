@@ -218,25 +218,26 @@
   <div class="modal-sheet">
     <h2 id="checkin-form-title">שעת הגעה</h2>
 
-    <div id="checkin-form-time-step">
-      <div class="field">
-        <label>שעת הגעה בפועל</label>
-        <div class="time-select-row">
-          <select id="checkin-form-minute"></select>
-          <span class="time-sep">:</span>
-          <select id="checkin-form-hour"></select>
-        </div>
+    <div class="field">
+      <label>שעת הגעה בפועל</label>
+      <div class="time-select-row">
+        <select id="checkin-form-minute"></select>
+        <span class="time-sep">:</span>
+        <select id="checkin-form-hour"></select>
       </div>
-      <button class="btn btn-primary" id="checkin-form-save">שמירה</button>
-      <button class="btn btn-secondary" id="checkin-form-cancel">ביטול</button>
     </div>
+    <button class="btn btn-primary" id="checkin-form-save">שמירה</button>
+    <button class="btn btn-secondary" id="checkin-form-cancel">ביטול</button>
+  </div>
+</div>
 
-    <div id="checkin-form-reason-step" style="display:none;">
-      <p class="stat-label">האיחור ישפיע על הרצף. מה הייתה הסיבה?</p>
-      <button class="btn btn-secondary" id="checkin-form-reason-habit">הרגלים ישנים</button>
-      <button class="btn btn-secondary" id="checkin-form-reason-unforeseen">נסיבות בלתי צפויות</button>
-      <button class="btn btn-secondary" id="checkin-form-reason-cancel">ביטול</button>
-    </div>
+<div id="late-reason-modal" class="modal-backdrop hidden">
+  <div class="modal-sheet">
+    <h2>מה הייתה הסיבה לאיחור?</h2>
+    <p id="late-reason-note" class="stat-label"></p>
+    <button class="btn btn-secondary" id="late-reason-habit">הרגלים ישנים</button>
+    <button class="btn btn-secondary" id="late-reason-unforeseen">נסיבות מיוחדות</button>
+    <button class="btn btn-secondary" id="late-reason-cancel">ביטול</button>
   </div>
 </div>
 

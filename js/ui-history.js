@@ -1,7 +1,7 @@
-import { formatLocalDate, parseLocalDate, isScheduledDay, computeCheckinResult } from "./streak.js";
+import { formatLocalDate, parseLocalDate, isScheduledDay, computeCheckinResult, isLateExemptionAvailable } from "./streak.js";
 import { showModal, hideModal, refreshAll } from "./app.js";
-import { saveShift, deleteShift, saveCheckin } from "./db.js";
-import { showLateFeedback, celebrateOnTimeCheckin } from "./ui-home.js";
+import { saveShift, deleteShift } from "./db.js";
+import { commitCheckinResult } from "./ui-home.js";
 
 let els = {};
 let state = {
@@ -12,7 +12,6 @@ let state = {
 let shiftEditingDate = null;
 let dayDetailDate = null;
 let checkinEditingDate = null;
-let pendingLateResult = null;
 
 export function initHistory() {
   els.current = document.getElementById("hist-current");
@@ -44,15 +43,10 @@ export function initHistory() {
 
   els.checkinModal = document.getElementById("checkin-form-modal");
   els.checkinTitle = document.getElementById("checkin-form-title");
-  els.checkinTimeStep = document.getElementById("checkin-form-time-step");
-  els.checkinReasonStep = document.getElementById("checkin-form-reason-step");
   els.checkinHour = document.getElementById("checkin-form-hour");
   els.checkinMinute = document.getElementById("checkin-form-minute");
   els.checkinSave = document.getElementById("checkin-form-save");
   els.checkinCancel = document.getElementById("checkin-form-cancel");
-  els.checkinReasonHabit = document.getElementById("checkin-form-reason-habit");
-  els.checkinReasonUnforeseen = document.getElementById("checkin-form-reason-unforeseen");
-  els.checkinReasonCancel = document.getElementById("checkin-form-reason-cancel");
 
   populateTimeSelects(els.shiftHour, els.shiftMinute);
   populateTimeSelects(els.checkinHour, els.checkinMinute);
@@ -98,9 +92,6 @@ export function initHistory() {
 
   els.checkinCancel.addEventListener("click", () => hideModal(els.checkinModal));
   els.checkinSave.addEventListener("click", handleCheckinSave);
-  els.checkinReasonHabit.addEventListener("click", () => finalizeCheckin("habit"));
-  els.checkinReasonUnforeseen.addEventListener("click", () => finalizeCheckin("unforeseen"));
-  els.checkinReasonCancel.addEventListener("click", () => hideModal(els.checkinModal));
 }
 
 function populateTimeSelects(hourEl, minuteEl) {
@@ -236,7 +227,7 @@ function renderCalendar(app) {
 
 const LATE_REASON_LABELS = {
   habit: "הרגלים ישנים",
-  unforeseen: "נסיבות בלתי צפויות",
+  unforeseen: "נסיבות מיוחדות",
 };
 
 function showDayDetail(app, dateStr) {
@@ -251,7 +242,12 @@ function showDayDetail(app, dateStr) {
       els.dayBody.textContent = `בזמן — הגעת בשעה ${time}.`;
     } else {
       const reasonLabel = LATE_REASON_LABELS[rec.lateReason];
-      els.dayBody.textContent = `איחור של ${rec.minutesLate} דקות — הגעת בשעה ${time}.${reasonLabel ? ` סיבה: ${reasonLabel}.` : ""}`;
+      let text = `איחור של ${rec.minutesLate} דקות — הגעת בשעה ${time}.${reasonLabel ? ` סיבה: ${reasonLabel}.` : ""}`;
+      if (rec.lateReason === "unforeseen") {
+        const wasExempted = isLateExemptionAvailable(app.checkinsByDate, app.shiftsByDate, dateStr);
+        text += wasExempted ? " הרצף נשמר בזכות הפטור החד-פעמי." : " הפטור כבר נוצל קודם ברצף הזה, כך שהאיחור הזה השפיע על הרצף.";
+      }
+      els.dayBody.textContent = text;
     }
     els.dayEdit.style.display = "block";
   } else {
@@ -306,15 +302,12 @@ async function handleDeleteShift() {
 
 function openCheckinForm(app, dateStr) {
   checkinEditingDate = dateStr;
-  pendingLateResult = null;
   const existing = app.checkinsByDate.get(dateStr);
   const shift = app.shiftsByDate.get(dateStr);
   const d = parseLocalDate(dateStr);
   const dateLabel = d.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
 
   els.checkinTitle.textContent = `שעת הגעה — ${dateLabel}`;
-  els.checkinTimeStep.style.display = "block";
-  els.checkinReasonStep.style.display = "none";
 
   let hour, minute;
   if (existing) {
@@ -333,7 +326,7 @@ function openCheckinForm(app, dateStr) {
   showModal(els.checkinModal);
 }
 
-function handleCheckinSave() {
+async function handleCheckinSave() {
   const d = parseLocalDate(checkinEditingDate);
   const hour = parseInt(els.checkinHour.value, 10);
   const minute = parseInt(els.checkinMinute.value, 10);
@@ -341,31 +334,8 @@ function handleCheckinSave() {
   const shift = renderHome_lastApp.shiftsByDate.get(checkinEditingDate);
   const result = computeCheckinResult(arrivalDateTime, shift, renderHome_lastApp.settings.graceMinutes);
 
-  if (result.status === "late") {
-    pendingLateResult = result;
-    els.checkinTimeStep.style.display = "none";
-    els.checkinReasonStep.style.display = "block";
-    return;
-  }
-
-  finalizeCheckin(null, result);
-}
-
-async function finalizeCheckin(lateReason, resultOverride) {
-  const result = resultOverride || pendingLateResult;
-  if (!result) return;
-  const record = { ...result };
-  if (lateReason) record.lateReason = lateReason;
-
-  await saveCheckin(record);
   hideModal(els.checkinModal);
-  await refreshAll();
-
-  if (result.status === "on-time") {
-    await celebrateOnTimeCheckin(result.date);
-  } else {
-    showLateFeedback();
-  }
+  await commitCheckinResult(result);
 }
 
 function renderTrend(app) {
