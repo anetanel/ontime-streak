@@ -1,4 +1,5 @@
 const COLORS = ["#ff7a1a", "#ffd60a", "#34c759", "#0a84ff", "#ff375f", "#bf5af2", "#f5ebdc"];
+const SPECIAL_EMOJIS = ["🌈", "⭐", "🦄"];
 
 function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -64,6 +65,50 @@ class ParticleEngine {
         life: 1,
         decay: 0.006 + Math.random() * 0.006,
         shape: Math.random() > 0.5 ? "rect" : "circle",
+      });
+    }
+  }
+
+  addRibbonBurst(count, originX, originY) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 2 + Math.random() * 5;
+      this.particles.push({
+        x: originX,
+        y: originY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 4,
+        rotation: Math.random() * Math.PI,
+        rotationSpeed: (Math.random() - 0.5) * 0.25,
+        color: COLORS[(Math.random() * COLORS.length) | 0],
+        size: 16 + Math.random() * 12,
+        gravity: 0.07,
+        drag: 0.985,
+        life: 1,
+        decay: 0.004 + Math.random() * 0.004,
+        shape: "ribbon",
+      });
+    }
+  }
+
+  addEmojiBurst(count, originX, originY) {
+    for (let i = 0; i < count; i++) {
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1.5 + Math.random() * 4;
+      this.particles.push({
+        x: originX,
+        y: originY,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed - 3,
+        rotation: Math.random() * Math.PI,
+        rotationSpeed: (Math.random() - 0.5) * 0.12,
+        emoji: SPECIAL_EMOJIS[(Math.random() * SPECIAL_EMOJIS.length) | 0],
+        size: 22 + Math.random() * 10,
+        gravity: 0.08,
+        drag: 0.985,
+        life: 1,
+        decay: 0.005 + Math.random() * 0.004,
+        shape: "emoji",
       });
     }
   }
@@ -173,17 +218,26 @@ class ParticleEngine {
       ctx.globalAlpha = Math.max(p.life, 0);
       ctx.translate(p.x, p.y);
       ctx.rotate(p.rotation);
-      ctx.fillStyle = p.color;
-      if (p.glow) {
-        ctx.shadowColor = p.color;
-        ctx.shadowBlur = 8;
-      }
-      if (p.shape === "rect") {
-        ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      if (p.shape === "emoji") {
+        ctx.font = `${p.size}px sans-serif`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(p.emoji, 0, 0);
       } else {
-        ctx.beginPath();
-        ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.fillStyle = p.color;
+        if (p.glow) {
+          ctx.shadowColor = p.color;
+          ctx.shadowBlur = 8;
+        }
+        if (p.shape === "rect") {
+          ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+        } else if (p.shape === "ribbon") {
+          ctx.fillRect(-p.size / 2, -p.size / 8, p.size, p.size / 4);
+        } else {
+          ctx.beginPath();
+          ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
+          ctx.fill();
+        }
       }
       ctx.restore();
     }
@@ -200,11 +254,11 @@ class ParticleEngine {
 }
 
 const TIER_CONFIG = {
-  small: { burstCount: 1, particlesPerBurst: 40, duration: 1500, shells: 0, sound: null },
-  medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, sound: "chime" },
-  large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, sound: "chime" },
-  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer" },
-  max: { burstCount: 8, particlesPerBurst: 65, duration: 6000, shells: 8, sound: "cheer" },
+  small: { burstCount: 1, particlesPerBurst: 40, duration: 1500, shells: 0, sound: null, specialRounds: 0 },
+  medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, sound: "chime", specialRounds: 0 },
+  large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, sound: "chime", specialRounds: 0 },
+  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer", specialRounds: 1 },
+  max: { burstCount: 8, particlesPerBurst: 65, duration: 6000, shells: 8, sound: "cheer", specialRounds: 2 },
 };
 
 export function celebrate(canvas, tier, soundEnabled) {
@@ -232,6 +286,17 @@ export function celebrate(canvas, tier, soundEnabled) {
         const x = w * (0.2 + Math.random() * 0.6);
         const targetY = h * (0.08 + Math.random() * 0.15);
         engine.addFireworkShell(i * (config.duration / (config.shells + 1)), x, targetY);
+      }
+    }
+    if (config.specialRounds > 0) {
+      for (let i = 0; i < config.specialRounds; i++) {
+        const delay = ((i + 1) / (config.specialRounds + 1)) * config.duration;
+        const x = w * (0.2 + Math.random() * 0.6);
+        const y = h * (0.15 + Math.random() * 0.2);
+        setTimeout(() => {
+          engine.addEmojiBurst(8, x, y);
+          engine.addRibbonBurst(16, w * (0.2 + Math.random() * 0.6), y);
+        }, delay);
       }
     }
   }

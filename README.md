@@ -36,10 +36,10 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v24"; // increment this
+const CACHE_NAME = "ontime-streak-v25"; // increment this
 
 // js/version.js
-export const APP_VERSION = "24"; // ...and this, to the same number
+export const APP_VERSION = "25"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.
