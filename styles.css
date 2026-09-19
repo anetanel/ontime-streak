@@ -31,6 +31,7 @@
 html, body {
   height: 100%;
   overscroll-behavior: none;
+  overflow-x: hidden;
 }
 
 body {
@@ -208,7 +209,10 @@ body {
 .field input[type="date"],
 .field input[type="number"],
 .field input[type="text"] {
+  display: block;
   width: 100%;
+  min-width: 0;
+  max-width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);
@@ -323,10 +327,12 @@ body {
 .modal-sheet {
   background: var(--card);
   width: 100%;
+  min-width: 0;
   border-radius: 20px 20px 0 0;
   padding: 20px 18px calc(20px + var(--safe-bottom));
   max-height: 85vh;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .modal-sheet h2 {
