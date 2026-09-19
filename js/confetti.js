@@ -1,4 +1,5 @@
 const COLORS = ["#ff7a1a", "#ffd60a", "#34c759", "#0a84ff", "#ff375f", "#bf5af2", "#f5ebdc"];
+const RIBBON_COLORS = ["#FFD700", "#FF69B4", "#00CED1", "#FF4500"];
 const SPECIAL_EMOJIS = ["🌈", "⭐", "🦄"];
 
 function prefersReducedMotion() {
@@ -69,24 +70,29 @@ class ParticleEngine {
     }
   }
 
-  addRibbonBurst(count, originX, originY) {
+  // Ribbons rain down from the top edge across [minX, maxX] like falling
+  // streamers, rather than bursting outward from a point like confetti —
+  // slower, longer, and with a side-to-side flutter as they fall.
+  addRibbonBurst(count, minX, maxX) {
     for (let i = 0; i < count; i++) {
-      const angle = Math.random() * Math.PI * 2;
-      const speed = 2 + Math.random() * 5;
+      const x = minX + Math.random() * (maxX - minX);
       this.particles.push({
-        x: originX,
-        y: originY,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed - 4,
+        x,
+        y: -20 - Math.random() * 40,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: 1.2 + Math.random() * 1.3,
         rotation: Math.random() * Math.PI,
-        rotationSpeed: (Math.random() - 0.5) * 0.25,
-        color: COLORS[(Math.random() * COLORS.length) | 0],
-        size: 16 + Math.random() * 12,
-        gravity: 0.07,
-        drag: 0.985,
+        rotationSpeed: (Math.random() - 0.5) * 0.1,
+        color: RIBBON_COLORS[(Math.random() * RIBBON_COLORS.length) | 0],
+        size: 34 + Math.random() * 22,
+        gravity: 0.025,
+        drag: 0.997,
         life: 1,
-        decay: 0.004 + Math.random() * 0.004,
+        decay: 0.0022 + Math.random() * 0.0015,
         shape: "ribbon",
+        wavePhase: Math.random() * Math.PI * 2,
+        waveSpeed: 0.06 + Math.random() * 0.05,
+        waveAmplitude: 0.8 + Math.random() * 1,
       });
     }
   }
@@ -209,6 +215,11 @@ class ParticleEngine {
       p.rotation += p.rotationSpeed;
       p.life -= p.decay;
 
+      if (p.shape === "ribbon") {
+        p.wavePhase += p.waveSpeed;
+        p.x += Math.sin(p.wavePhase) * p.waveAmplitude;
+      }
+
       if (p.life <= 0 || p.y > window.innerHeight + 40) {
         this.particles.splice(i, 1);
         continue;
@@ -232,7 +243,7 @@ class ParticleEngine {
         if (p.shape === "rect") {
           ctx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
         } else if (p.shape === "ribbon") {
-          ctx.fillRect(-p.size / 2, -p.size / 8, p.size, p.size / 4);
+          ctx.fillRect(-p.size / 2, -p.size / 14, p.size, p.size / 7);
         } else {
           ctx.beginPath();
           ctx.arc(0, 0, p.size / 2, 0, Math.PI * 2);
@@ -254,11 +265,11 @@ class ParticleEngine {
 }
 
 const TIER_CONFIG = {
-  small: { burstCount: 1, particlesPerBurst: 40, duration: 1500, shells: 0, sound: null, specialRounds: 0 },
-  medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, sound: "chime", specialRounds: 0 },
-  large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, sound: "chime", specialRounds: 0 },
-  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer", specialRounds: 1 },
-  max: { burstCount: 8, particlesPerBurst: 65, duration: 6000, shells: 8, sound: "cheer", specialRounds: 2 },
+  small: { burstCount: 1, particlesPerBurst: 40, duration: 1500, shells: 0, sound: null, emojiRounds: 0, ribbonEveryMs: 0 },
+  medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, sound: "chime", emojiRounds: 0, ribbonEveryMs: 0 },
+  large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, sound: "chime", emojiRounds: 0, ribbonEveryMs: 0 },
+  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer", emojiRounds: 1, ribbonEveryMs: 1800 },
+  max: { burstCount: 8, particlesPerBurst: 65, duration: 6000, shells: 8, sound: "cheer", emojiRounds: 2, ribbonEveryMs: 1500 },
 };
 
 export function celebrate(canvas, tier, soundEnabled) {
@@ -288,15 +299,21 @@ export function celebrate(canvas, tier, soundEnabled) {
         engine.addFireworkShell(i * (config.duration / (config.shells + 1)), x, targetY);
       }
     }
-    if (config.specialRounds > 0) {
-      for (let i = 0; i < config.specialRounds; i++) {
-        const delay = ((i + 1) / (config.specialRounds + 1)) * config.duration;
+    if (config.emojiRounds > 0) {
+      for (let i = 0; i < config.emojiRounds; i++) {
+        const delay = ((i + 1) / (config.emojiRounds + 1)) * config.duration;
         const x = w * (0.2 + Math.random() * 0.6);
         const y = h * (0.15 + Math.random() * 0.2);
-        setTimeout(() => {
-          engine.addEmojiBurst(8, x, y);
-          engine.addRibbonBurst(16, w * (0.2 + Math.random() * 0.6), y);
-        }, delay);
+        setTimeout(() => engine.addEmojiBurst(8, x, y), delay);
+      }
+    }
+    if (config.ribbonEveryMs > 0) {
+      // Ribbons rain from the top on a steady cadence throughout the
+      // celebration, rather than bursting once from a point like confetti.
+      let delay = 600;
+      while (delay < config.duration) {
+        setTimeout(() => engine.addRibbonBurst(10, w * 0.05, w * 0.95), delay);
+        delay += config.ribbonEveryMs;
       }
     }
   }
