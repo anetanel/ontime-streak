@@ -76,7 +76,10 @@ class ParticleEngine {
         x: originX,
         y: window.innerHeight,
         vx: (Math.random() - 0.5) * 1,
-        vy: -(8 + Math.random() * 3),
+        // Launch fast enough to always reach targetY before gravity kills its
+        // climb — otherwise it explodes at its natural (much lower) apex,
+        // which is what made shells look low regardless of targetY.
+        vy: -(16 + Math.random() * 3),
         targetY,
         isRocket: true,
         color,
@@ -199,9 +202,9 @@ class ParticleEngine {
 const TIER_CONFIG = {
   small: { particles: 40, duration: 1500, shells: 0, sound: null },
   medium: { particles: 100, duration: 2500, shells: 0, sound: "chime" },
-  large: { particles: 60, duration: 4000, shells: 3, sound: "chime" },
-  xlarge: { particles: 100, duration: 5000, shells: 5, sound: "cheer" },
-  max: { particles: 150, duration: 6000, shells: 8, sound: "cheer" },
+  large: { particles: 130, duration: 4000, shells: 3, sound: "chime" },
+  xlarge: { particles: 190, duration: 5000, shells: 5, sound: "cheer" },
+  max: { particles: 260, duration: 6000, shells: 8, sound: "cheer" },
 };
 
 export function celebrate(canvas, tier, soundEnabled) {
@@ -226,7 +229,7 @@ export function celebrate(canvas, tier, soundEnabled) {
     if (config.shells > 0) {
       for (let i = 0; i < config.shells; i++) {
         const x = w * (0.2 + Math.random() * 0.6);
-        const targetY = h * (0.2 + Math.random() * 0.25);
+        const targetY = h * (0.08 + Math.random() * 0.15);
         engine.addFireworkShell(i * (config.duration / (config.shells + 1)), x, targetY);
       }
     }
