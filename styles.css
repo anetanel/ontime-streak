@@ -29,7 +29,6 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
 html, body {
-  height: 100%;
   overscroll-behavior: none;
   overflow-x: hidden;
 }
@@ -46,16 +45,13 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
-  overflow: hidden;
+  min-height: 100dvh;
 }
 
 .screen {
   flex: 1;
-  overflow-y: auto;
-  padding: calc(var(--safe-top) + 14px) 16px calc(76px + var(--safe-bottom));
+  padding: calc(var(--safe-top) + 14px) 16px 20px;
   display: none;
-  -webkit-overflow-scrolling: touch;
 }
 
 .screen.active { display: block; }
@@ -169,9 +165,7 @@ body {
 .reward-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
 
 .tabbar {
-  position: fixed;
-  left: 0;
-  right: 0;
+  position: sticky;
   bottom: 0;
   display: flex;
   background: var(--tab-bg);
