@@ -4,10 +4,10 @@ import { savePrizeAward, deletePrizeAward } from "./db.js";
 // Ordered most to least significant, so the highest matching tier wins
 // on a day that happens to divide evenly into more than one of these.
 export const PRIZE_TIERS = [
-  { key: "tier4", intervalDays: 180, label: "כל חצי שנה" },
-  { key: "tier3", intervalDays: 30, label: "כל חודש" },
-  { key: "tier2", intervalDays: 7, label: "כל שבוע" },
-  { key: "tier1", intervalDays: 3, label: "כל 3 ימים" },
+  { key: "tier4", intervalDays: 180, label: "חצי שנה רצופה!" },
+  { key: "tier3", intervalDays: 30, label: "30 ימים רצופים!" },
+  { key: "tier2", intervalDays: 7, label: "7 ימים רצופים!" },
+  { key: "tier1", intervalDays: 3, label: "3 ימים רצופים!" },
 ];
 
 export function getTierByKey(key) {
