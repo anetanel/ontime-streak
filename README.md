@@ -35,13 +35,17 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v6"; // increment this
+const CACHE_NAME = "ontime-streak-v10"; // increment this
 
 // js/version.js
-export const APP_VERSION = "6"; // ...and this, to the same number
+export const APP_VERSION = "10"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.
+
+**If she reopens the app and the version number hasn't changed:** iOS's standalone-PWA runtime is known to be less reliable than a normal Safari tab about checking for service worker updates on relaunch, especially when the app was only backgrounded rather than fully closed. As of v10, `app.js` explicitly forces an update check on load and whenever the app is foregrounded, and auto-reloads the moment a new version takes over — so this should now resolve itself within a couple of app opens without any manual step. If it's still stuck on an old version after that:
+1. First try opening the live URL directly in a **Safari tab** (not the Home Screen icon) — a plain browser tab checks for updates more reliably than the standalone app.
+2. If that still doesn't pick up the new version: have her tap **Export Backup** in Settings first, then go to **iPhone Settings → Safari → Advanced → Website Data**, find the site, and delete its data — this wipes the service worker and its cache, forcing a fully fresh install next time she opens it. Since this also erases her on-device check-in history, use **Import Backup** afterward to restore it from the file she just exported.
 
 ### Local preview (desktop, for quick sanity checks only)
 

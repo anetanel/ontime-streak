@@ -99,11 +99,35 @@ function pinTabbarToVisualViewport() {
 }
 
 function registerServiceWorker() {
-  if ("serviceWorker" in navigator) {
-    window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./sw.js").catch(() => {});
-    });
-  }
+  if (!("serviceWorker" in navigator)) return;
+
+  // Without this, the browser can silently reuse an HTTP-cached copy of
+  // sw.js itself when checking for updates, so a new deploy never gets
+  // noticed. updateViaCache:"none" forces a real network check every time.
+  window.addEventListener("load", async () => {
+    try {
+      const registration = await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
+      registration.update().catch(() => {});
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+          registration.update().catch(() => {});
+        }
+      });
+    } catch (e) {
+      // registration failed; app still works, just without offline support
+    }
+  });
+
+  // Even once a new service worker is found and activates, the page
+  // already open keeps running under the old one until it reloads.
+  // Reload automatically the moment control switches over, so a fresh
+  // launch (or the next time it's foregrounded) always shows the update.
+  let refreshedAlready = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshedAlready) return;
+    refreshedAlready = true;
+    window.location.reload();
+  });
 }
 
 async function boot() {
