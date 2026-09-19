@@ -33,7 +33,7 @@ export function initRewards() {
 function openForm(reward) {
   editingId = reward ? reward.id : null;
   pendingImage = reward ? reward.imageBase64 || null : null;
-  els.title.textContent = reward ? "Edit Reward" : "Add Reward";
+  els.title.textContent = reward ? "עריכת פרס" : "הוספת פרס";
   els.name.value = reward ? reward.title : "";
   els.threshold.value = reward ? reward.thresholdDays : "";
   els.error.style.display = "none";
@@ -95,11 +95,11 @@ async function handleSave() {
   const title = els.name.value.trim();
   const threshold = parseInt(els.threshold.value, 10);
 
-  if (!title) return showError("Give this reward a name.");
-  if (!threshold || threshold < 1) return showError("Enter a streak length of 1 or more days.");
+  if (!title) return showError("תני שם לפרס.");
+  if (!threshold || threshold < 1) return showError("הזיני מספר ימים 1 ומעלה.");
 
   const duplicate = App.rewards.find((r) => r.thresholdDays === threshold && r.id !== editingId);
-  if (duplicate) return showError(`Day ${threshold} is already used by "${duplicate.title}".`);
+  if (duplicate) return showError(`יום ${threshold} כבר תפוס על ידי "${duplicate.title}".`);
 
   const reward = {
     title,
@@ -121,7 +121,7 @@ async function handleSave() {
 
 async function handleDelete() {
   if (editingId == null) return;
-  if (!confirm("Delete this reward? This can't be undone.")) return;
+  if (!confirm("למחוק את הפרס? לא ניתן לבטל.")) return;
   await deleteReward(editingId);
   hideModal(els.modal);
   await refreshAll();
@@ -146,7 +146,7 @@ export function renderRewards(app) {
         ${r.imageBase64 ? `<img src="${r.imageBase64}" alt="">` : `<div class="placeholder">🎵</div>`}
         <div class="info">
           <div class="title">${escapeHtml(r.title)}</div>
-          <div class="sub">Day ${r.thresholdDays}${r.thresholdDays <= app.currentStreak ? " · Unlocked" : ""}</div>
+          <div class="sub">יום ${r.thresholdDays}${r.thresholdDays <= app.currentStreak ? " · נפתח" : ""}</div>
         </div>
         <button class="icon-btn edit-btn" data-id="${r.id}">✏️</button>
       </div>

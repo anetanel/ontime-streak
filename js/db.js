@@ -43,7 +43,7 @@ export const DEFAULT_SETTINGS = {
   id: "settings",
   expectedStartTime: "09:00",
   graceMinutes: 10,
-  weeklySchedule: { mon: true, tue: true, wed: true, thu: true, fri: true, sat: false, sun: false },
+  weeklySchedule: { sun: true, mon: true, tue: true, wed: true, thu: true, fri: true, sat: false },
   soundEnabled: true,
   themePreference: "system",
   lastBackupAt: null,

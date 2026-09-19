@@ -247,7 +247,7 @@ body {
 .switch .thumb {
   position: absolute;
   top: 2px;
-  left: 2px;
+  right: 2px;
   width: 27px;
   height: 27px;
   border-radius: 50%;
@@ -258,7 +258,7 @@ body {
 }
 
 .switch input:checked + .track { background: var(--accent-2); }
-.switch input:checked ~ .thumb { transform: translateX(20px); }
+.switch input:checked ~ .thumb { transform: translateX(-20px); }
 
 .btn {
   display: block;

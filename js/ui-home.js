@@ -56,8 +56,8 @@ function showLateFeedback() {
   els.revealImg.style.display = "none";
   els.revealPlaceholder.style.display = "flex";
   els.revealPlaceholder.textContent = "😌";
-  els.revealTitle.textContent = "That's okay";
-  els.revealSub.textContent = "Today reset the streak — tomorrow's a fresh start.";
+  els.revealTitle.textContent = "זה בסדר";
+  els.revealSub.textContent = "היום איפס את הרצף — מחר זה יום חדש.";
   showModal(els.revealModal);
 }
 
@@ -65,8 +65,8 @@ function showBonusFeedback() {
   els.revealImg.style.display = "none";
   els.revealPlaceholder.style.display = "flex";
   els.revealPlaceholder.textContent = "👋";
-  els.revealTitle.textContent = "Nice!";
-  els.revealSub.textContent = "Not a scheduled work day — this check-in doesn't affect your streak.";
+  els.revealTitle.textContent = "יופי!";
+  els.revealSub.textContent = "היום הזה לא יום עבודה קבוע — הצ'ק-אין הזה לא משפיע על הרצף שלך.";
   showModal(els.revealModal);
 }
 
@@ -80,8 +80,8 @@ function showMilestoneReveal(reward, streak) {
     els.revealPlaceholder.style.display = "flex";
     els.revealPlaceholder.textContent = "🎉";
   }
-  els.revealTitle.textContent = `${streak}-Day Streak!`;
-  els.revealSub.textContent = `You unlocked ${reward.title}`;
+  els.revealTitle.textContent = `רצף של ${streak} ימים!`;
+  els.revealSub.textContent = `פתחת את ${reward.title}`;
   showModal(els.revealModal);
 }
 
@@ -96,19 +96,19 @@ export function renderHome(app) {
   if (todayRecord) {
     els.btn.disabled = true;
     if (todayRecord.isBonusDay) {
-      els.btn.textContent = "Checked In ✓";
-      els.status.textContent = "Bonus check-in — not a scheduled work day";
+      els.btn.textContent = "נרשם ✓";
+      els.status.textContent = "צ'ק-אין בונוס — לא יום עבודה קבוע";
     } else if (todayRecord.status === "on-time") {
-      els.btn.textContent = "Checked In ✓";
-      els.status.textContent = `Arrived at ${new Date(todayRecord.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+      els.btn.textContent = "הגעת ✓";
+      els.status.textContent = `הגעת בשעה ${new Date(todayRecord.timestamp).toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" })}`;
     } else {
-      els.btn.textContent = "Checked In";
+      els.btn.textContent = "נרשם";
       els.btn.classList.add("late");
-      els.status.textContent = `Late by ${todayRecord.minutesLate} min`;
+      els.status.textContent = `איחור של ${todayRecord.minutesLate} דקות`;
     }
   } else {
     els.btn.disabled = false;
-    els.btn.textContent = "I'm at Work";
+    els.btn.textContent = "הגעתי לעבודה";
     els.status.textContent = "";
   }
 
@@ -118,15 +118,15 @@ export function renderHome(app) {
       <img src="${active.imageBase64 || ""}" alt="${escapeHtml(active.title)}" onerror="this.style.display='none'">
       <div>
         <div class="reward-title">${escapeHtml(active.title)}</div>
-        <div class="reward-sub">Unlocked at ${active.thresholdDays}-day streak</div>
+        <div class="reward-sub">נפתח ברצף של ${active.thresholdDays} ימים</div>
       </div>
     `;
   } else {
     els.rewardCard.innerHTML = `
       <div class="placeholder">🎵</div>
       <div>
-        <div class="reward-title">No reward unlocked yet</div>
-        <div class="reward-sub">Keep your streak going!</div>
+        <div class="reward-title">עוד לא נפתח פרס</div>
+        <div class="reward-sub">תמשיכי ברצף!</div>
       </div>
     `;
   }

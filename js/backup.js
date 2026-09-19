@@ -14,7 +14,7 @@ export async function exportBackup() {
     try {
       const file = new File([blob], filename, { type: "application/json" });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "On-Time Streak Backup" });
+        await navigator.share({ files: [file], title: "גיבוי רצף בזמן" });
         return { method: "share" };
       }
     } catch (e) {
@@ -40,15 +40,15 @@ export function readBackupFile(file) {
       try {
         const data = JSON.parse(reader.result);
         if (!data.settings || !Array.isArray(data.checkins) || !Array.isArray(data.rewards)) {
-          reject(new Error("This file doesn't look like a valid On-Time Streak backup."));
+          reject(new Error("הקובץ הזה לא נראה כמו גיבוי תקין של האפליקציה."));
           return;
         }
         resolve(data);
       } catch (e) {
-        reject(new Error("Couldn't read that file — it may be corrupted."));
+        reject(new Error("לא ניתן לקרוא את הקובץ — ייתכן שהוא פגום."));
       }
     };
-    reader.onerror = () => reject(new Error("Couldn't read that file."));
+    reader.onerror = () => reject(new Error("לא ניתן לקרוא את הקובץ."));
     reader.readAsText(file);
   });
 }

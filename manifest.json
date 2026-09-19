@@ -1,6 +1,8 @@
 {
-  "name": "On-Time Streak",
-  "short_name": "OnTime",
+  "name": "רצף בזמן",
+  "short_name": "בזמן",
+  "lang": "he",
+  "dir": "rtl",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

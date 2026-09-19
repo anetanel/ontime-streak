@@ -80,14 +80,14 @@ function renderStats(app) {
 
   if (state.range === "week") {
     start = new Date(now); start.setDate(start.getDate() - 6);
-    label = "On-Time (7 days)";
+    label = "אחוז בזמן (7 ימים)";
   } else if (state.range === "month") {
     start = new Date(now.getFullYear(), now.getMonth(), 1);
-    label = "On-Time (Month)";
+    label = "אחוז בזמן (חודש)";
   } else {
     const dates = app.checkins.map((c) => c.date).sort();
     start = dates.length ? parseLocalDate(dates[0]) : new Date(now);
-    label = "On-Time (All Time)";
+    label = "אחוז בזמן (מאז ומתמיד)";
   }
 
   let onTime = 0;
@@ -114,7 +114,7 @@ function renderStats(app) {
 function renderCalendar(app) {
   const { calYear, calMonth } = state;
   const monthDate = new Date(calYear, calMonth, 1);
-  els.calLabel.textContent = monthDate.toLocaleDateString([], { month: "long", year: "numeric" });
+  els.calLabel.textContent = monthDate.toLocaleDateString("he-IL", { month: "long", year: "numeric" });
 
   const now = new Date();
   const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth();
@@ -124,7 +124,7 @@ function renderCalendar(app) {
   const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
 
   let html = "";
-  ["S", "M", "T", "W", "T", "F", "S"].forEach((d) => {
+  ["א", "ב", "ג", "ד", "ה", "ו", "ש"].forEach((d) => {
     html += `<div class="cal-dow">${d}</div>`;
   });
   for (let i = 0; i < firstDow; i++) {
@@ -148,21 +148,21 @@ function renderCalendar(app) {
 function showDayDetail(app, dateStr) {
   const rec = app.checkinsByDate.get(dateStr);
   const d = parseLocalDate(dateStr);
-  els.dayTitle.textContent = d.toLocaleDateString([], { weekday: "long", month: "long", day: "numeric" });
+  els.dayTitle.textContent = d.toLocaleDateString("he-IL", { weekday: "long", month: "long", day: "numeric" });
 
   if (rec) {
-    const time = new Date(rec.timestamp).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const time = new Date(rec.timestamp).toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" });
     if (rec.isBonusDay) {
-      els.dayBody.textContent = `Checked in at ${time} on a non-scheduled day — doesn't affect your streak.`;
+      els.dayBody.textContent = `צ'ק-אין בשעה ${time} ביום שאינו יום עבודה קבוע — לא משפיע על הרצף שלך.`;
     } else if (rec.status === "on-time") {
-      els.dayBody.textContent = `On time — arrived at ${time}.`;
+      els.dayBody.textContent = `בזמן — הגעת בשעה ${time}.`;
     } else {
-      els.dayBody.textContent = `Late by ${rec.minutesLate} min — arrived at ${time}.`;
+      els.dayBody.textContent = `איחור של ${rec.minutesLate} דקות — הגעת בשעה ${time}.`;
     }
   } else if (isScheduledDay(dateStr, app.settings.weeklySchedule)) {
-    els.dayBody.textContent = dateStr > formatLocalDate(new Date()) ? "Upcoming scheduled work day." : "No check-in recorded — counted as missed.";
+    els.dayBody.textContent = dateStr > formatLocalDate(new Date()) ? "יום עבודה עתידי." : "לא נרשם צ'ק-אין — נספר כפספוס.";
   } else {
-    els.dayBody.textContent = "Not a scheduled work day.";
+    els.dayBody.textContent = "לא יום עבודה קבוע.";
   }
   showModal(els.dayModal);
 }
@@ -193,7 +193,7 @@ function renderTrend(app) {
   const maxY = Math.max(...values, deadlineMinutes) + 10;
   const w = 300, h = 140, padX = 10, padY = 10;
 
-  const xFor = (i) => padX + (i / (recent.length - 1)) * (w - padX * 2);
+  const xFor = (i) => padX + ((recent.length - 1 - i) / (recent.length - 1)) * (w - padX * 2);
   const yFor = (m) => h - padY - ((m - minY) / (maxY - minY)) * (h - padY * 2);
 
   const deadlineY = yFor(deadlineMinutes);

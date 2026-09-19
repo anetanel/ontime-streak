@@ -3,13 +3,13 @@ import { App, refreshAll } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
 
 const DOW = [
-  { key: "mon", label: "Monday" },
-  { key: "tue", label: "Tuesday" },
-  { key: "wed", label: "Wednesday" },
-  { key: "thu", label: "Thursday" },
-  { key: "fri", label: "Friday" },
-  { key: "sat", label: "Saturday" },
-  { key: "sun", label: "Sunday" },
+  { key: "sun", label: "ראשון" },
+  { key: "mon", label: "שני" },
+  { key: "tue", label: "שלישי" },
+  { key: "wed", label: "רביעי" },
+  { key: "thu", label: "חמישי" },
+  { key: "fri", label: "שישי" },
+  { key: "sat", label: "שבת" },
 ];
 
 let els = {};
@@ -81,7 +81,7 @@ async function handleExport() {
     await exportBackup();
     await refreshAll();
   } catch (e) {
-    alert("Couldn't export backup: " + e.message);
+    alert("ייצוא הגיבוי נכשל: " + e.message);
   }
 }
 
@@ -91,18 +91,18 @@ async function handleImport(e) {
   if (!file) return;
   try {
     const data = await readBackupFile(file);
-    if (!confirm("Importing will replace all current check-ins and rewards with the backup file. Continue?")) return;
+    if (!confirm("ייבוא יחליף את כל הצ'ק-אינים והפרסים הנוכחיים בקובץ הגיבוי. להמשיך?")) return;
     await importBackup(data);
     await refreshAll();
-    alert("Backup imported.");
+    alert("הגיבוי יובא בהצלחה.");
   } catch (err) {
     alert(err.message);
   }
 }
 
 async function handleReset() {
-  if (!confirm("This will permanently delete all check-ins, streaks, and rewards on this device. Are you sure?")) return;
-  if (!confirm("Really reset everything? This can't be undone.")) return;
+  if (!confirm("פעולה זו תמחק לצמיתות את כל הצ'ק-אינים, הרצפים והפרסים במכשיר. להמשיך?")) return;
+  if (!confirm("לאפס את הכל? הפעולה בלתי הפיכה.")) return;
   await resetAllData();
   await refreshAll();
 }
@@ -118,17 +118,17 @@ export function renderSettings(app) {
 
   if (app.settings.lastBackupAt) {
     const d = new Date(app.settings.lastBackupAt);
-    els.lastBackupLabel.textContent = `Last backup: ${d.toLocaleDateString()} ${d.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
+    els.lastBackupLabel.textContent = `גיבוי אחרון: ${d.toLocaleDateString("he-IL")} ${d.toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" })}`;
     const daysSince = (Date.now() - d.getTime()) / (1000 * 60 * 60 * 24);
     if (daysSince > 30) {
       els.banner.style.display = "block";
-      els.banner.textContent = "It's been a while — consider backing up your streak history.";
+      els.banner.textContent = "עבר די הרבה זמן — כדאי לגבות את היסטוריית הרצף שלך.";
     } else {
       els.banner.style.display = "none";
     }
   } else {
-    els.lastBackupLabel.textContent = "No backup taken yet";
+    els.lastBackupLabel.textContent = "עדיין לא בוצע גיבוי";
     els.banner.style.display = "block";
-    els.banner.textContent = "Back up your data so you never lose your streak history.";
+    els.banner.textContent = "גבי את הנתונים שלך כדי שלא לאבד את היסטוריית הרצף.";
   }
 }
