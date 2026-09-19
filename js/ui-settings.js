@@ -1,5 +1,5 @@
 import { saveSettings, resetAllData } from "./db.js";
-import { App, refreshAll } from "./app.js";
+import { App, refreshAll, checkForUpdatesNow } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
 import { APP_VERSION } from "./version.js";
 
@@ -17,6 +17,8 @@ export function initSettings() {
   els.resetBtn = document.getElementById("reset-btn");
   els.version = document.getElementById("app-version");
   els.version.textContent = APP_VERSION;
+  els.checkUpdateBtn = document.getElementById("check-update-btn");
+  els.checkUpdateStatus = document.getElementById("check-update-status");
 
   els.grace.addEventListener("change", debounceSaveSettings);
   els.sound.addEventListener("change", debounceSaveSettings);
@@ -25,6 +27,22 @@ export function initSettings() {
   els.importBtn.addEventListener("click", () => els.importFile.click());
   els.importFile.addEventListener("change", handleImport);
   els.resetBtn.addEventListener("click", handleReset);
+  els.checkUpdateBtn.addEventListener("click", handleCheckForUpdates);
+}
+
+async function handleCheckForUpdates() {
+  els.checkUpdateStatus.textContent = "בודקת עדכון…";
+  const registration = await checkForUpdatesNow();
+
+  if (!registration) {
+    els.checkUpdateStatus.textContent = "לא ניתן לבדוק עדכון כרגע.";
+    return;
+  }
+  if (registration.installing || registration.waiting) {
+    els.checkUpdateStatus.textContent = "נמצא עדכון — מתקינה, האפליקציה תיטען מחדש...";
+    return;
+  }
+  els.checkUpdateStatus.textContent = `האפליקציה כבר מעודכנת (גרסה ${APP_VERSION}).`;
 }
 
 function debounceSaveSettings() {

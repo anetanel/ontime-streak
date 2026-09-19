@@ -98,6 +98,8 @@ function pinTabbarToVisualViewport() {
   update();
 }
 
+let swRegistration = null;
+
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
 
@@ -106,11 +108,11 @@ function registerServiceWorker() {
   // noticed. updateViaCache:"none" forces a real network check every time.
   window.addEventListener("load", async () => {
     try {
-      const registration = await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
-      registration.update().catch(() => {});
+      swRegistration = await navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" });
+      swRegistration.update().catch(() => {});
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
-          registration.update().catch(() => {});
+          swRegistration.update().catch(() => {});
         }
       });
     } catch (e) {
@@ -128,6 +130,21 @@ function registerServiceWorker() {
     refreshedAlready = true;
     window.location.reload();
   });
+}
+
+// The Home Screen icon runs its own standalone WKWebView process on iOS,
+// which can stay suspended across "closes" and isn't always as reliable
+// as a Safari tab about checking for updates on its own. This gives a
+// guaranteed manual way to force the check, used by the Settings button.
+export async function checkForUpdatesNow() {
+  if (!swRegistration) return null;
+  try {
+    await swRegistration.update();
+  } catch (e) {
+    // network unavailable or similar; still return the registration so
+    // the caller can report whatever state is actually known
+  }
+  return swRegistration;
 }
 
 async function boot() {

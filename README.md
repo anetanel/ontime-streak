@@ -35,21 +35,24 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v10"; // increment this
+const CACHE_NAME = "ontime-streak-v13"; // increment this
 
 // js/version.js
-export const APP_VERSION = "10"; // ...and this, to the same number
+export const APP_VERSION = "13"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.
 
-**If she reopens the app and the version number hasn't changed:** as of v10, `app.js` explicitly forces a service-worker update check on load and whenever the app is foregrounded, and auto-reloads the moment a new version takes over — this should handle ordinary updates on its own from here forward, without any manual step.
+**If she reopens the app and the version number hasn't changed:** as of v10, `app.js` explicitly forces a service-worker update check on load and whenever the app is foregrounded, and auto-reloads the moment a new version takes over — this should handle ordinary updates on its own most of the time, without any manual step.
 
-The one case that mechanism *can't* fix on its own: getting v10 onto a device that's still running a pre-v10 build, since the old code has no way to know to check more aggressively. That's a one-time bootstrapping problem, not an ongoing one. If it ever recurs (e.g. a device stuck on an old version with no update-checking code at all yet), in order of how targeted/non-destructive they are:
+**The Home Screen icon specifically is less reliable than a Safari tab.** Confirmed in the field: Safari picked up a new version correctly while the installed icon stayed on an older one at the same time. iOS runs the Home Screen icon as its own standalone process that can stay suspended across "closes," and that seems to make even the automatic update check unreliable there — this looks like a platform limitation, not something fully fixable from JS. As of v13, there's a manual escape hatch for exactly this: **open the app → Settings → "בדיקת עדכון"** (Check for Update), tap it, and if a new version is found the app reloads itself within a second or two. Try this first whenever the icon seems stuck.
+
+If the manual check button itself is what's out of date (i.e. the icon is stuck on a build from before v13), that's a one-time bootstrapping problem — the old code has no way to know a newer check mechanism exists. In order of how targeted/non-destructive they are:
 1. Open the live URL in a **new** Safari tab (tap the tabs button → **+**), not by switching back to an already-open tab — Safari can show an already-open tab exactly as last rendered without re-fetching anything.
-2. If that still shows the old version: **Safari → Settings → Clear History for Today** (Safari app → the book icon → History → "Clear" at the bottom, choosing "Today"). This is what actually fixed it last time — Safari's history-based page cache is separate from "Website Data" (cookies/storage) and isn't touched by clearing that.
-3. Only if that still doesn't work: have her tap **Export Backup** in Settings first, then **iPhone Settings → Safari → Advanced → Website Data**, find the site, delete its data (wipes the service worker/cache but also her on-device history — restore with **Import Backup** afterward).
-4. Last resort: restart the phone.
+2. If that still shows the old version: **Safari → Settings → Clear History for Today** (Safari app → the book icon → History → "Clear" at the bottom, choosing "Today"). This is what actually fixed it once before — Safari's history-based page cache is separate from "Website Data" (cookies/storage) and isn't touched by clearing that.
+3. If the Home Screen icon specifically is still stuck after Safari itself is confirmed up to date: delete the icon and re-add it fresh from the now-updated Safari tab.
+4. Only if that still doesn't work: have her tap **Export Backup** in Settings first, then **iPhone Settings → Safari → Advanced → Website Data**, find the site, delete its data (wipes the service worker/cache but also her on-device history — restore with **Import Backup** afterward).
+5. Last resort: restart the phone.
 
 ### Local preview (desktop, for quick sanity checks only)
 
