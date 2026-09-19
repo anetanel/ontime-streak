@@ -1,11 +1,19 @@
 import { getCheckin, saveCheckin } from "./db.js";
-import { computeCheckinResult, getTierForStreak, formatLocalDate, isLateExemptionAvailable } from "./streak.js";
+import {
+  computeCheckinResult,
+  getTierForStreak,
+  formatLocalDate,
+  parseLocalDate,
+  snapToTimeOptions,
+  isLateExemptionAvailable,
+} from "./streak.js";
 import { celebrate } from "./confetti.js";
 import { evaluateAndAwardPrize, getTierByKey, daysUntilNextPrize } from "./prizes.js";
 import { App, refreshAll, showModal, hideModal } from "./app.js";
 
 let els = {};
 let reasonResolve = null;
+let checkinEditingDate = null;
 
 export function initHome() {
   els.btn = document.getElementById("checkin-btn");
@@ -27,14 +35,44 @@ export function initHome() {
   els.reasonNote = document.getElementById("late-reason-note");
   els.reasonHabit = document.getElementById("late-reason-habit");
   els.reasonUnforeseen = document.getElementById("late-reason-unforeseen");
+  els.reasonEnterTime = document.getElementById("late-reason-enter-time");
   els.reasonCancel = document.getElementById("late-reason-cancel");
+
+  els.checkinModal = document.getElementById("checkin-form-modal");
+  els.checkinTitle = document.getElementById("checkin-form-title");
+  els.checkinHour = document.getElementById("checkin-form-hour");
+  els.checkinMinute = document.getElementById("checkin-form-minute");
+  els.checkinSave = document.getElementById("checkin-form-save");
+  els.checkinCancel = document.getElementById("checkin-form-cancel");
+
+  populateTimeSelects();
 
   els.btn.addEventListener("click", handleCheckin);
   els.revealClose.addEventListener("click", () => hideModal(els.revealModal));
 
   els.reasonHabit.addEventListener("click", () => resolveLateReason("habit"));
   els.reasonUnforeseen.addEventListener("click", () => resolveLateReason("unforeseen"));
+  els.reasonEnterTime.addEventListener("click", () => resolveLateReason("enter-time"));
   els.reasonCancel.addEventListener("click", () => resolveLateReason(null));
+
+  els.checkinCancel.addEventListener("click", () => hideModal(els.checkinModal));
+  els.checkinSave.addEventListener("click", handleArrivalTimeSave);
+}
+
+function populateTimeSelects() {
+  let hourHtml = "";
+  for (let h = 0; h < 24; h++) {
+    const v = String(h).padStart(2, "0");
+    hourHtml += `<option value="${v}">${v}</option>`;
+  }
+  els.checkinHour.innerHTML = hourHtml;
+
+  let minuteHtml = "";
+  for (let m = 0; m < 60; m += 5) {
+    const v = String(m).padStart(2, "0");
+    minuteHtml += `<option value="${v}">${v}</option>`;
+  }
+  els.checkinMinute.innerHTML = minuteHtml;
 }
 
 function resolveLateReason(value) {
@@ -57,12 +95,65 @@ function promptLateReason(dateStr) {
   });
 }
 
+/**
+ * Opens the arrival-time entry form for dateStr — used both to backfill or
+ * correct a past day's arrival (called from ui-history.js) and, for today,
+ * as the "I actually arrived on time, I just tapped late" correction path
+ * out of the late-reason prompt.
+ */
+export function openArrivalTimeForm(dateStr) {
+  checkinEditingDate = dateStr;
+  const existing = App.checkinsByDate.get(dateStr);
+  const shift = App.shiftsByDate.get(dateStr);
+  const d = parseLocalDate(dateStr);
+  const dateLabel = d.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
+
+  els.checkinTitle.textContent = `שעת הגעה — ${dateLabel}`;
+
+  let hour, minute;
+  if (existing) {
+    const t = new Date(existing.timestamp);
+    const snapped = snapToTimeOptions(`${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`);
+    hour = snapped.hour;
+    minute = snapped.minute;
+  } else if (dateStr === formatLocalDate(new Date())) {
+    const now = new Date();
+    const snapped = snapToTimeOptions(`${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`);
+    hour = snapped.hour;
+    minute = snapped.minute;
+  } else {
+    const snapped = snapToTimeOptions(shift.startTime);
+    hour = snapped.hour;
+    minute = snapped.minute;
+  }
+  els.checkinHour.value = hour;
+  els.checkinMinute.value = minute;
+
+  showModal(els.checkinModal);
+}
+
+async function handleArrivalTimeSave() {
+  const d = parseLocalDate(checkinEditingDate);
+  const hour = parseInt(els.checkinHour.value, 10);
+  const minute = parseInt(els.checkinMinute.value, 10);
+  const arrivalDateTime = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0);
+  const shift = App.shiftsByDate.get(checkinEditingDate);
+  const result = computeCheckinResult(arrivalDateTime, shift, App.settings.graceMinutes);
+
+  hideModal(els.checkinModal);
+  await commitCheckinResult(result);
+}
+
 export async function commitCheckinResult(result) {
   let finalResult = result;
   let exempted = false;
   if (result.status === "late") {
     const choice = await promptLateReason(result.date);
     if (choice.reason === null) return false;
+    if (choice.reason === "enter-time") {
+      openArrivalTimeForm(result.date);
+      return false;
+    }
     finalResult = { ...result, lateReason: choice.reason };
     exempted = choice.exempted;
   }
@@ -102,6 +193,7 @@ function showLateFeedback(exempted) {
     els.revealTitle.textContent = "זה בסדר";
     els.revealSub.textContent = "האיחור הזה משפיע על הרצף שלך.";
   }
+  els.revealClose.textContent = "בסדר";
   showModal(els.revealModal);
 }
 
@@ -129,6 +221,7 @@ export function showPrizeReveal(award) {
   }
   els.revealTitle.textContent = `זכית בפרס! (${tier ? tier.label : ""})`;
   els.revealSub.textContent = award.prizeTitle;
+  els.revealClose.textContent = "מעולה!";
   showModal(els.revealModal);
 }
 

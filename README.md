@@ -13,8 +13,8 @@ Live app: `https://anetanel.github.io/ontime-streak/`
 
 ## Everyday use (no tech knowledge needed)
 
-- **Home**: tap "I'm at Work" when you arrive. On time turns the button into a gold star with confetti/fireworks. Late asks why (old habits vs. special circumstances) before saving, then shows a gentle message — see below for what each reason does to the streak. If no shift was entered for today, the button is grayed out and disabled — there's nothing to check in against.
-- **Calendar** (also doubles as Shifts, since this is part-time work with no fixed weekly pattern): tap any future date (shown in light purple once it has a shift) to add or edit that day's shift start time, or tap a purple day again to change/remove it. On-time days get a small gold star badge. Tap a past date with a shift and no recorded arrival to enter what time she actually got there — same late-reason prompt as above. Tap a past date that already has a recorded arrival to see it, with an edit option to correct it. Also shows streak stats, an on-time-percentage toggle, and an arrival-time trend chart.
+- **Home**: tap "I'm at Work" when you arrive. On time turns the button into a gold star with confetti/fireworks. Late asks why — old habits, special circumstances, or "I actually arrived on time, I just tapped late" (which reopens the arrival-time entry so she can correct the actual time instead of picking a reason) — then shows a gentle message. If no shift was entered for today, the button is grayed out and disabled — there's nothing to check in against.
+- **Calendar** (also doubles as Shifts, since this is part-time work with no fixed weekly pattern): tap any future date (shown in light purple once it has a shift) to add or edit that day's shift start time, or tap a purple day again to change/remove it. On-time days get a small gold star badge, "old habits" late days get a ❌, and "special circumstances" late days get a 😢. Tap a past date with a shift and no recorded arrival to enter what time she actually got there — same late-reason prompt as above. Tap a past date that already has a recorded arrival to see it, with an edit option to correct it. Also shows streak stats and an on-time-percentage toggle.
 - **Late reasons and the streak**: "old habits" always breaks the streak, same as before. "Special circumstances" is a one-time pass **per streak period** — the first time it's used since the streak last actually broke, that late day doesn't break it; a second use before the next real break does break it, and the app tells her upfront (in the reason prompt) whether the pass is still available before she picks it.
 - **Prizes**: fully read-only for her — shows how many days until the next prize, the four tiers (every 3 / 7 / 30 / 180 days), and a permanent history of every prize she's won, with the photo, title, tier, and date. The prize photo pool itself is managed in the repo, not the app — see `prizes/README.md`.
 - **Settings**: grace period (how many minutes late still counts as on time), celebration sound, and where you back up your data (Export Backup) — do this occasionally and save the file to Files/iCloud or AirDrop it to someone, so history survives a lost phone or a cleared browser.
@@ -36,10 +36,10 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v19"; // increment this
+const CACHE_NAME = "ontime-streak-v20"; // increment this
 
 // js/version.js
-export const APP_VERSION = "19"; // ...and this, to the same number
+export const APP_VERSION = "20"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.

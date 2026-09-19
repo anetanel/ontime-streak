@@ -1,7 +1,7 @@
-import { formatLocalDate, parseLocalDate, isScheduledDay, computeCheckinResult, isLateExemptionAvailable } from "./streak.js";
+import { formatLocalDate, parseLocalDate, isScheduledDay, isLateExemptionAvailable, snapToTimeOptions } from "./streak.js";
 import { showModal, hideModal, refreshAll } from "./app.js";
 import { saveShift, deleteShift } from "./db.js";
-import { commitCheckinResult } from "./ui-home.js";
+import { openArrivalTimeForm } from "./ui-home.js";
 
 let els = {};
 let state = {
@@ -11,7 +11,6 @@ let state = {
 };
 let shiftEditingDate = null;
 let dayDetailDate = null;
-let checkinEditingDate = null;
 
 export function initHistory() {
   els.current = document.getElementById("hist-current");
@@ -25,8 +24,6 @@ export function initHistory() {
   els.calTodayRow = document.getElementById("cal-today-row");
   els.calTodayBtn = document.getElementById("cal-today-btn");
   els.calGrid = document.getElementById("calendar-grid");
-  els.trendChart = document.getElementById("trend-chart");
-  els.trendEmpty = document.getElementById("trend-empty");
   els.dayModal = document.getElementById("day-detail-modal");
   els.dayTitle = document.getElementById("day-detail-title");
   els.dayBody = document.getElementById("day-detail-body");
@@ -41,15 +38,7 @@ export function initHistory() {
   els.shiftDelete = document.getElementById("shift-form-delete");
   els.shiftCancel = document.getElementById("shift-form-cancel");
 
-  els.checkinModal = document.getElementById("checkin-form-modal");
-  els.checkinTitle = document.getElementById("checkin-form-title");
-  els.checkinHour = document.getElementById("checkin-form-hour");
-  els.checkinMinute = document.getElementById("checkin-form-minute");
-  els.checkinSave = document.getElementById("checkin-form-save");
-  els.checkinCancel = document.getElementById("checkin-form-cancel");
-
   populateTimeSelects(els.shiftHour, els.shiftMinute);
-  populateTimeSelects(els.checkinHour, els.checkinMinute);
 
   els.rangeToggle.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-range]");
@@ -83,15 +72,12 @@ export function initHistory() {
   els.dayClose.addEventListener("click", () => hideModal(els.dayModal));
   els.dayEdit.addEventListener("click", () => {
     hideModal(els.dayModal);
-    openCheckinForm(renderHome_lastApp, dayDetailDate);
+    openArrivalTimeForm(dayDetailDate);
   });
 
   els.shiftCancel.addEventListener("click", () => hideModal(els.shiftModal));
   els.shiftSave.addEventListener("click", handleSaveShift);
   els.shiftDelete.addEventListener("click", handleDeleteShift);
-
-  els.checkinCancel.addEventListener("click", () => hideModal(els.checkinModal));
-  els.checkinSave.addEventListener("click", handleCheckinSave);
 }
 
 function populateTimeSelects(hourEl, minuteEl) {
@@ -118,14 +104,17 @@ export function renderHistory(app) {
   els.longest.textContent = app.longestStreak;
   renderStats(app);
   renderCalendar(app);
-  renderTrend(app);
 }
 
 function classifyDay(app, dateStr, notYetResolved) {
   const scheduled = isScheduledDay(dateStr, app.shiftsByDate);
   const rec = app.checkinsByDate.get(dateStr);
   if (rec && rec.status === "on-time") return "on-time";
-  if (rec && rec.status === "late") return "late";
+  if (rec && rec.status === "late") {
+    if (rec.lateReason === "habit") return "late late-habit";
+    if (rec.lateReason === "unforeseen") return "late late-unforeseen";
+    return "late";
+  }
   if (notYetResolved) return scheduled ? "future-shift" : "none";
   return scheduled ? "missed" : "none";
 }
@@ -217,7 +206,7 @@ function renderCalendar(app) {
         return;
       }
       if (isScheduledDay(dateStr, app.shiftsByDate)) {
-        openCheckinForm(app, dateStr);
+        openArrivalTimeForm(dateStr);
       } else {
         showDayDetail(app, dateStr);
       }
@@ -257,13 +246,6 @@ function showDayDetail(app, dateStr) {
   showModal(els.dayModal);
 }
 
-function snapToTimeOptions(startTime) {
-  let [h, m] = startTime.split(":").map(Number);
-  m = Math.round(m / 5) * 5;
-  if (m === 60) { m = 0; h = (h + 1) % 24; }
-  return { hour: String(h).padStart(2, "0"), minute: String(m).padStart(2, "0") };
-}
-
 function openShiftForm(app, dateStr) {
   shiftEditingDate = dateStr;
   const existing = app.shiftsByDate.get(dateStr);
@@ -300,85 +282,3 @@ async function handleDeleteShift() {
   await refreshAll();
 }
 
-function openCheckinForm(app, dateStr) {
-  checkinEditingDate = dateStr;
-  const existing = app.checkinsByDate.get(dateStr);
-  const shift = app.shiftsByDate.get(dateStr);
-  const d = parseLocalDate(dateStr);
-  const dateLabel = d.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
-
-  els.checkinTitle.textContent = `שעת הגעה — ${dateLabel}`;
-
-  let hour, minute;
-  if (existing) {
-    const t = new Date(existing.timestamp);
-    const snapped = snapToTimeOptions(`${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`);
-    hour = snapped.hour;
-    minute = snapped.minute;
-  } else {
-    const snapped = snapToTimeOptions(shift.startTime);
-    hour = snapped.hour;
-    minute = snapped.minute;
-  }
-  els.checkinHour.value = hour;
-  els.checkinMinute.value = minute;
-
-  showModal(els.checkinModal);
-}
-
-async function handleCheckinSave() {
-  const d = parseLocalDate(checkinEditingDate);
-  const hour = parseInt(els.checkinHour.value, 10);
-  const minute = parseInt(els.checkinMinute.value, 10);
-  const arrivalDateTime = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0);
-  const shift = renderHome_lastApp.shiftsByDate.get(checkinEditingDate);
-  const result = computeCheckinResult(arrivalDateTime, shift, renderHome_lastApp.settings.graceMinutes);
-
-  hideModal(els.checkinModal);
-  await commitCheckinResult(result);
-}
-
-function renderTrend(app) {
-  const recent = app.checkins
-    .slice()
-    .sort((a, b) => (a.date < b.date ? -1 : 1))
-    .slice(-14);
-
-  if (recent.length < 2) {
-    els.trendChart.innerHTML = "";
-    els.trendEmpty.style.display = "block";
-    return;
-  }
-  els.trendEmpty.style.display = "none";
-
-  const minutesOf = (rec) => {
-    const t = new Date(rec.timestamp);
-    return t.getHours() * 60 + t.getMinutes();
-  };
-
-  const values = recent.map(minutesOf);
-  const minY = Math.min(...values) - 10;
-  const maxY = Math.max(...values) + 10;
-  const w = 300, h = 140, padX = 10, padY = 10;
-
-  const xFor = (i) => padX + ((recent.length - 1 - i) / (recent.length - 1)) * (w - padX * 2);
-  const yFor = (m) => h - padY - ((m - minY) / (maxY - minY)) * (h - padY * 2);
-
-  let svg = "";
-  let path = "";
-  recent.forEach((rec, i) => {
-    const x = xFor(i);
-    const y = yFor(minutesOf(rec));
-    path += (i === 0 ? "M" : "L") + x + "," + y + " ";
-  });
-  svg += `<path d="${path}" fill="none" stroke="var(--text-dim)" stroke-width="1.5" opacity="0.5" />`;
-
-  recent.forEach((rec, i) => {
-    const x = xFor(i);
-    const y = yFor(minutesOf(rec));
-    const color = rec.status === "on-time" ? "#34c759" : "#ff3b30";
-    svg += `<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" />`;
-  });
-
-  els.trendChart.innerHTML = svg;
-}

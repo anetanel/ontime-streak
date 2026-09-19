@@ -18,6 +18,14 @@ export function isScheduledDay(dateStr, shiftsByDate) {
   return shiftsByDate.has(dateStr);
 }
 
+/** Rounds an "HH:mm" string to the nearest 5-minute option. */
+export function snapToTimeOptions(startTime) {
+  let [h, m] = startTime.split(":").map(Number);
+  m = Math.round(m / 5) * 5;
+  if (m === 60) { m = 0; h = (h + 1) % 24; }
+  return { hour: String(h).padStart(2, "0"), minute: String(m).padStart(2, "0") };
+}
+
 export function computeCheckinResult(now, shift, graceMinutes) {
   const dateStr = formatLocalDate(now);
   const [h, m] = shift.startTime.split(":").map(Number);
