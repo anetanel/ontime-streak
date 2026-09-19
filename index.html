@@ -51,7 +51,7 @@
   </section>
 
   <section id="screen-history" class="screen">
-    <h1 class="topbar">היסטוריה</h1>
+    <h1 class="topbar">לוח שנה</h1>
 
     <div class="card">
       <div class="stat-row">
@@ -89,14 +89,16 @@
       <svg id="trend-chart" class="trend-chart" viewBox="0 0 300 140" preserveAspectRatio="none"></svg>
       <div id="trend-empty" class="empty-hint" style="display:none;">אין עדיין מספיק נתונים</div>
     </div>
-  </section>
 
-  <section id="screen-shifts" class="screen">
-    <h1 class="topbar">משמרות</h1>
     <div class="card">
-      <button class="btn btn-primary" id="add-shift-btn">+ הוספת משמרת</button>
-      <div id="shifts-list"></div>
-      <div id="shifts-empty" class="empty-hint" style="display:none;">עדיין לא נוספו משמרות עתידיות. הוסיפי תאריך ושעת התחלה לכל יום עבודה.</div>
+      <div class="cal-legend">
+        <span><i class="cal-dot on-time"></i>בזמן</span>
+        <span><i class="cal-dot late"></i>איחור</span>
+        <span><i class="cal-dot missed"></i>פספוס</span>
+        <span><i class="cal-dot future-shift"></i>משמרת עתידית</span>
+        <span><i class="cal-dot bonus"></i>בונוס</span>
+      </div>
+      <div class="stat-label">הקישי על יום עתידי כדי להוסיף לו משמרת.</div>
     </div>
   </section>
 
@@ -153,8 +155,7 @@
 
   <nav class="tabbar">
     <button data-screen="home" class="active"><span class="icon">🏠</span>בית</button>
-    <button data-screen="shifts"><span class="icon">📅</span>משמרות</button>
-    <button data-screen="history"><span class="icon">📈</span>היסטוריה</button>
+    <button data-screen="history"><span class="icon">📅</span>לוח שנה</button>
     <button data-screen="rewards"><span class="icon">🎵</span>פרסים</button>
     <button data-screen="settings"><span class="icon">⚙️</span>הגדרות</button>
   </nav>
@@ -198,16 +199,15 @@
 
 <div id="shift-form-modal" class="modal-backdrop hidden">
   <div class="modal-sheet">
-    <h2 id="shift-form-title">הוספת משמרת</h2>
+    <h2 id="shift-form-title">משמרת</h2>
     <div class="field">
-      <label for="shift-form-date">תאריך</label>
-      <input type="date" id="shift-form-date">
+      <label>שעת התחלה</label>
+      <div class="time-select-row">
+        <select id="shift-form-hour"></select>
+        <span class="time-sep">:</span>
+        <select id="shift-form-minute"></select>
+      </div>
     </div>
-    <div class="field">
-      <label for="shift-form-time">שעת התחלה</label>
-      <input type="time" id="shift-form-time">
-    </div>
-    <div id="shift-form-error" class="stat-label" style="color:var(--danger); display:none; margin-bottom:10px;"></div>
     <button class="btn btn-primary" id="shift-form-save">שמירה</button>
     <button class="btn btn-secondary" id="shift-form-delete" style="display:none;">מחיקת משמרת</button>
     <button class="btn btn-secondary" id="shift-form-cancel">ביטול</button>

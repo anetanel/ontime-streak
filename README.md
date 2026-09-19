@@ -14,8 +14,7 @@ Live app: `https://anetanel.github.io/ontime-streak/`
 ## Everyday use (no tech knowledge needed)
 
 - **Home**: tap "I'm at Work" when you arrive. On time = confetti/fireworks. Late = a gentle reset message. If no shift was entered for today, checking in doesn't affect the streak either way.
-- **Shifts**: since this is part-time, shift-based work, there's no fixed weekly pattern — tap "+ Add Shift" to enter each upcoming work day's date and start time. A day with no shift entered isn't counted as a scheduled work day at all.
-- **History**: calendar of on-time/late/missed/no-shift days, streak stats, and an arrival-time trend chart.
+- **Calendar** (also doubles as Shifts, since this is part-time work with no fixed weekly pattern): tap any future date (shown in light purple once it has a shift) to add or edit that day's shift start time, or tap a purple day again to change/remove it. Tap a past date to see what happened that day. A day with no shift entered isn't counted as a scheduled work day at all. Also shows streak stats, an on-time-percentage toggle, and an arrival-time trend chart.
 - **Rewards**: tap "+ Add Reward" to upload a photo of a favorite musician and set how many days in a row unlocks it. Tap the pencil on any reward to edit or delete it. No code, ever — this screen is the entire way to customize rewards.
 - **Settings**: grace period (how many minutes late still counts as on time), celebration sound, and where you back up your data (Export Backup) — do this occasionally and save the file to Files/iCloud or AirDrop it to someone, so history survives a lost phone or a cleared browser.
 
@@ -36,10 +35,10 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v5"; // increment this
+const CACHE_NAME = "ontime-streak-v6"; // increment this
 
 // js/version.js
-export const APP_VERSION = "5"; // ...and this, to the same number
+export const APP_VERSION = "6"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.

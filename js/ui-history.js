@@ -1,5 +1,6 @@
 import { formatLocalDate, parseLocalDate, isScheduledDay } from "./streak.js";
-import { showModal, hideModal } from "./app.js";
+import { showModal, hideModal, refreshAll } from "./app.js";
+import { saveShift, deleteShift } from "./db.js";
 
 let els = {};
 let state = {
@@ -7,6 +8,7 @@ let state = {
   calYear: new Date().getFullYear(),
   calMonth: new Date().getMonth(),
 };
+let shiftEditingDate = null;
 
 export function initHistory() {
   els.current = document.getElementById("hist-current");
@@ -24,6 +26,16 @@ export function initHistory() {
   els.dayTitle = document.getElementById("day-detail-title");
   els.dayBody = document.getElementById("day-detail-body");
   els.dayClose = document.getElementById("day-detail-close");
+
+  els.shiftModal = document.getElementById("shift-form-modal");
+  els.shiftTitle = document.getElementById("shift-form-title");
+  els.shiftHour = document.getElementById("shift-form-hour");
+  els.shiftMinute = document.getElementById("shift-form-minute");
+  els.shiftSave = document.getElementById("shift-form-save");
+  els.shiftDelete = document.getElementById("shift-form-delete");
+  els.shiftCancel = document.getElementById("shift-form-cancel");
+
+  populateTimeSelects();
 
   els.rangeToggle.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-range]");
@@ -48,6 +60,26 @@ export function initHistory() {
   });
 
   els.dayClose.addEventListener("click", () => hideModal(els.dayModal));
+
+  els.shiftCancel.addEventListener("click", () => hideModal(els.shiftModal));
+  els.shiftSave.addEventListener("click", handleSaveShift);
+  els.shiftDelete.addEventListener("click", handleDeleteShift);
+}
+
+function populateTimeSelects() {
+  let hourHtml = "";
+  for (let h = 0; h < 24; h++) {
+    const v = String(h).padStart(2, "0");
+    hourHtml += `<option value="${v}">${v}</option>`;
+  }
+  els.shiftHour.innerHTML = hourHtml;
+
+  let minuteHtml = "";
+  for (let m = 0; m < 60; m += 5) {
+    const v = String(m).padStart(2, "0");
+    minuteHtml += `<option value="${v}">${v}</option>`;
+  }
+  els.shiftMinute.innerHTML = minuteHtml;
 }
 
 let renderHome_lastApp = null;
@@ -61,15 +93,14 @@ export function renderHistory(app) {
   renderTrend(app);
 }
 
-function classifyDay(app, dateStr, isFuture) {
+function classifyDay(app, dateStr, notYetResolved) {
   const scheduled = isScheduledDay(dateStr, app.shiftsByDate);
   const rec = app.checkinsByDate.get(dateStr);
   if (rec && rec.isBonusDay) return "bonus";
   if (rec && rec.status === "on-time") return "on-time";
   if (rec && rec.status === "late") return "late";
-  if (!scheduled) return "none";
-  if (isFuture) return "none";
-  return "missed";
+  if (notYetResolved) return scheduled ? "future-shift" : "none";
+  return scheduled ? "missed" : "none";
 }
 
 function renderStats(app) {
@@ -134,14 +165,22 @@ function renderCalendar(app) {
   for (let day = 1; day <= daysInMonth; day++) {
     const d = new Date(calYear, calMonth, day);
     const dateStr = formatLocalDate(d);
-    const isFuture = dateStr > todayStr;
-    const cls = classifyDay(app, dateStr, isFuture);
+    const notYetResolved = dateStr >= todayStr;
+    const cls = classifyDay(app, dateStr, notYetResolved);
     html += `<div class="cal-day ${cls}" data-date="${dateStr}">${day}</div>`;
   }
   els.calGrid.innerHTML = html;
 
   els.calGrid.querySelectorAll(".cal-day[data-date]").forEach((el) => {
-    el.addEventListener("click", () => showDayDetail(app, el.dataset.date));
+    el.addEventListener("click", () => {
+      const dateStr = el.dataset.date;
+      const rec = app.checkinsByDate.get(dateStr);
+      if (!rec && dateStr >= formatLocalDate(new Date())) {
+        openShiftForm(app, dateStr);
+      } else {
+        showDayDetail(app, dateStr);
+      }
+    });
   });
 }
 
@@ -160,14 +199,54 @@ function showDayDetail(app, dateStr) {
       els.dayBody.textContent = `איחור של ${rec.minutesLate} דקות — הגעת בשעה ${time}.`;
     }
   } else if (isScheduledDay(dateStr, app.shiftsByDate)) {
-    const shift = app.shiftsByDate.get(dateStr);
-    els.dayBody.textContent = dateStr > formatLocalDate(new Date())
-      ? `משמרת מתוכננת בשעה ${shift.startTime}.`
-      : "לא נרשם צ'ק-אין — נספר כפספוס.";
+    els.dayBody.textContent = "לא נרשם צ'ק-אין — נספר כפספוס.";
   } else {
     els.dayBody.textContent = "אין משמרת ביום זה.";
   }
   showModal(els.dayModal);
+}
+
+function snapToTimeOptions(startTime) {
+  let [h, m] = startTime.split(":").map(Number);
+  m = Math.round(m / 5) * 5;
+  if (m === 60) { m = 0; h = (h + 1) % 24; }
+  return { hour: String(h).padStart(2, "0"), minute: String(m).padStart(2, "0") };
+}
+
+function openShiftForm(app, dateStr) {
+  shiftEditingDate = dateStr;
+  const existing = app.shiftsByDate.get(dateStr);
+  const d = parseLocalDate(dateStr);
+  const dateLabel = d.toLocaleDateString("he-IL", { weekday: "long", day: "numeric", month: "numeric" });
+
+  if (existing) {
+    els.shiftTitle.textContent = `עריכת משמרת — ${dateLabel}`;
+    const snapped = snapToTimeOptions(existing.startTime);
+    els.shiftHour.value = snapped.hour;
+    els.shiftMinute.value = snapped.minute;
+    els.shiftDelete.style.display = "block";
+  } else {
+    els.shiftTitle.textContent = `הוספת משמרת — ${dateLabel}`;
+    els.shiftHour.value = "09";
+    els.shiftMinute.value = "00";
+    els.shiftDelete.style.display = "none";
+  }
+  showModal(els.shiftModal);
+}
+
+async function handleSaveShift() {
+  const startTime = `${els.shiftHour.value}:${els.shiftMinute.value}`;
+  await saveShift({ date: shiftEditingDate, startTime });
+  hideModal(els.shiftModal);
+  await refreshAll();
+}
+
+async function handleDeleteShift() {
+  if (!shiftEditingDate) return;
+  if (!confirm("למחוק את המשמרת?")) return;
+  await deleteShift(shiftEditingDate);
+  hideModal(els.shiftModal);
+  await refreshAll();
 }
 
 function renderTrend(app) {

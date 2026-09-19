@@ -205,8 +205,6 @@ body {
   font-weight: 500;
 }
 
-.field input[type="time"],
-.field input[type="date"],
 .field input[type="number"],
 .field input[type="text"] {
   display: block;
@@ -222,14 +220,28 @@ body {
   font-size: 17px;
 }
 
-/* iOS Safari lays out native date/time controls incorrectly inside an
-   RTL ancestor, letting them render wider than their box. Forcing LTR
-   layout on just these controls (while keeping the surrounding form
-   RTL) keeps them sized correctly. */
-.field input[type="time"],
-.field input[type="date"] {
-  direction: ltr;
-  text-align: right;
+.time-select-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.time-select-row select {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 17px;
+}
+
+.time-sep {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--text-dim);
 }
 
 .row-toggle {
@@ -396,7 +408,36 @@ body {
 .cal-day.late { background: rgba(255, 59, 48, 0.75); color: #fff; }
 .cal-day.missed { background: var(--border); color: var(--text-dim); }
 .cal-day.bonus { background: rgba(10, 132, 255, 0.5); color: #fff; }
+.cal-day.future-shift { background: rgba(175, 82, 222, 0.45); color: #fff; }
 .cal-day.empty { visibility: hidden; }
+
+.cal-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 10px;
+}
+
+.cal-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.cal-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.cal-dot.on-time { background: rgba(52, 199, 89, 0.9); }
+.cal-dot.late { background: rgba(255, 59, 48, 0.9); }
+.cal-dot.missed { background: var(--border); }
+.cal-dot.bonus { background: rgba(10, 132, 255, 0.8); }
+.cal-dot.future-shift { background: rgba(175, 82, 222, 0.8); }
 
 .month-nav {
   display: flex;

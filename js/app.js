@@ -3,7 +3,6 @@ import { formatLocalDate, computeStreak, computeLongestStreak } from "./streak.j
 import { initHome, renderHome } from "./ui-home.js";
 import { initHistory, renderHistory } from "./ui-history.js";
 import { initRewards, renderRewards } from "./ui-rewards.js";
-import { initShifts, renderShifts } from "./ui-shifts.js";
 import { initSettings, renderSettings } from "./ui-settings.js";
 
 export const App = {
@@ -53,7 +52,6 @@ export async function refreshAll() {
   renderHome(App);
   renderHistory(App);
   renderRewards(App);
-  renderShifts(App);
   renderSettings(App);
 }
 
@@ -91,7 +89,6 @@ async function boot() {
   initHome();
   initHistory();
   initRewards();
-  initShifts();
   initSettings();
   await refreshAll();
 }
