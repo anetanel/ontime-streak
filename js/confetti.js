@@ -200,11 +200,11 @@ class ParticleEngine {
 }
 
 const TIER_CONFIG = {
-  small: { particles: 40, duration: 1500, shells: 0, sound: null },
-  medium: { particles: 100, duration: 2500, shells: 0, sound: "chime" },
-  large: { particles: 130, duration: 4000, shells: 3, sound: "chime" },
-  xlarge: { particles: 190, duration: 5000, shells: 5, sound: "cheer" },
-  max: { particles: 260, duration: 6000, shells: 8, sound: "cheer" },
+  small: { burstCount: 1, particlesPerBurst: 40, duration: 1500, shells: 0, sound: null },
+  medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, sound: "chime" },
+  large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, sound: "chime" },
+  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer" },
+  max: { burstCount: 8, particlesPerBurst: 65, duration: 6000, shells: 8, sound: "cheer" },
 };
 
 export function celebrate(canvas, tier, soundEnabled) {
@@ -219,11 +219,12 @@ export function celebrate(canvas, tier, soundEnabled) {
   if (reduced) {
     engine.addConfettiBurst(15, w / 2, h * 0.3);
   } else {
-    if (config.particles > 0) {
-      engine.addConfettiBurst(config.particles, w / 2, h * 0.25);
-      if (config.particles > 60) {
-        setTimeout(() => engine.addConfettiBurst(config.particles / 2, w * 0.25, h * 0.2), 200);
-        setTimeout(() => engine.addConfettiBurst(config.particles / 2, w * 0.75, h * 0.2), 400);
+    if (config.burstCount > 0) {
+      for (let i = 0; i < config.burstCount; i++) {
+        const delay = config.burstCount === 1 ? 0 : i * (config.duration / (config.burstCount + 1));
+        const x = w * (0.15 + Math.random() * 0.7);
+        const y = h * (0.15 + Math.random() * 0.2);
+        setTimeout(() => engine.addConfettiBurst(config.particlesPerBurst, x, y), delay);
       }
     }
     if (config.shells > 0) {
