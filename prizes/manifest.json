@@ -1,0 +1,22 @@
+{
+  "tier1": {
+    "prizes": [
+      { "file": "tier1/placeholder.jpg", "title": "פרס לדוגמה — החליפי אותי!" }
+    ]
+  },
+  "tier2": {
+    "prizes": [
+      { "file": "tier2/placeholder.jpg", "title": "פרס לדוגמה — החליפי אותי!" }
+    ]
+  },
+  "tier3": {
+    "prizes": [
+      { "file": "tier3/placeholder.jpg", "title": "פרס לדוגמה — החליפי אותי!" }
+    ]
+  },
+  "tier4": {
+    "prizes": [
+      { "file": "tier4/placeholder.jpg", "title": "פרס לדוגמה — החליפי אותי!" }
+    ]
+  }
+}

@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v15";
+const CACHE_NAME = "ontime-streak-v17";
 const ASSETS = [
   "./",
   "./index.html",
@@ -10,14 +10,21 @@ const ASSETS = [
   "./js/confetti.js",
   "./js/backup.js",
   "./js/version.js",
+  "./js/prizes.js",
+  "./js/devtools.js",
   "./js/ui-home.js",
   "./js/ui-history.js",
-  "./js/ui-rewards.js",
+  "./js/ui-prizes.js",
   "./js/ui-settings.js",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-512-maskable.png",
+  "./prizes/manifest.json",
+  "./prizes/tier1/placeholder.jpg",
+  "./prizes/tier2/placeholder.jpg",
+  "./prizes/tier3/placeholder.jpg",
+  "./prizes/tier4/placeholder.jpg",
 ];
 
 self.addEventListener("install", (event) => {

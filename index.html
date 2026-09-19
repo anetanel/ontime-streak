@@ -48,6 +48,7 @@
         <div class="reward-sub">תמשיכי ברצף!</div>
       </div>
     </div>
+    <div class="stat-label" id="home-next-prize" style="text-align:center; margin-top:-6px; margin-bottom:14px;"></div>
   </section>
 
   <section id="screen-history" class="screen">
@@ -106,10 +107,20 @@
 
   <section id="screen-rewards" class="screen">
     <h1 class="topbar">פרסים</h1>
+
+    <div class="card" style="text-align:center;">
+      <div class="stat-label" id="next-prize-info"></div>
+    </div>
+
     <div class="card">
-      <button class="btn btn-primary" id="add-reward-btn">+ הוספת פרס</button>
-      <div id="rewards-list"></div>
-      <div id="rewards-empty" class="empty-hint" style="display:none;">עדיין אין פרסים. הוסיפי תמונה של אמן אהוב ובחרי כמה ימים ברצף פותחים אותה.</div>
+      <h3>רמות פרסים</h3>
+      <div id="tier-legend"></div>
+    </div>
+
+    <div class="card">
+      <h3>פרסים שזכית בהם</h3>
+      <div id="prizes-list"></div>
+      <div id="prizes-empty" class="empty-hint" style="display:none;">עוד לא זכית בפרס. הפרס הראשון מחכה לך בעוד קצת!</div>
     </div>
   </section>
 
@@ -174,30 +185,6 @@
     <h2 id="reveal-title">אבן דרך!</h2>
     <p id="reveal-sub"></p>
     <button class="btn btn-primary" id="reveal-close">מעולה!</button>
-  </div>
-</div>
-
-<div id="reward-form-modal" class="modal-backdrop hidden">
-  <div class="modal-sheet">
-    <h2 id="reward-form-title">הוספת פרס</h2>
-    <div class="photo-picker">
-      <img id="reward-form-preview" src="" alt="" style="display:none;">
-      <div id="reward-form-placeholder" class="placeholder">🎵</div>
-      <button class="btn btn-secondary" id="reward-form-choose-photo" style="width:auto; margin:0; padding:10px 16px;">בחירת תמונה</button>
-      <input type="file" id="reward-form-file" accept="image/*" style="display:none;">
-    </div>
-    <div class="field">
-      <label for="reward-form-name">שם האמן/ית או הפרס</label>
-      <input type="text" id="reward-form-name" placeholder="לדוגמה: פרדי מרקורי">
-    </div>
-    <div class="field">
-      <label for="reward-form-threshold">נפתח אחרי כמה ימים רצופים בזמן</label>
-      <input type="number" id="reward-form-threshold" min="1" step="1">
-    </div>
-    <div id="reward-form-error" class="stat-label" style="color:var(--danger); display:none; margin-bottom:10px;"></div>
-    <button class="btn btn-primary" id="reward-form-save">שמירה</button>
-    <button class="btn btn-secondary" id="reward-form-delete" style="display:none;">מחיקת פרס</button>
-    <button class="btn btn-secondary" id="reward-form-cancel">ביטול</button>
   </div>
 </div>
 

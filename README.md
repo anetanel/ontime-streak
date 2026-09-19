@@ -1,6 +1,6 @@
 # On-Time Streak
 
-A private, on-device iPhone habit tracker: tap "I'm at Work" when you arrive, build a streak of on-time days, and unlock photos of your favorite musicians as your streak grows. All data stays on your phone — nothing is ever sent to a server.
+A private, on-device iPhone habit tracker: tap "I'm at Work" when you arrive, build a streak of on-time days, and win a randomly picked musician photo every 3 days, 7 days, 30 days, and 6 months. All data stays on your phone — nothing is ever sent to a server. The prize photos themselves live in this repo (see `prizes/README.md`) and are curated by whoever maintains the code — she never has to enter or manage them.
 
 Live app: `https://anetanel.github.io/ontime-streak/`
 
@@ -15,7 +15,7 @@ Live app: `https://anetanel.github.io/ontime-streak/`
 
 - **Home**: tap "I'm at Work" when you arrive. On time turns the button into a gold star with confetti/fireworks. Late = a gentle reset message. If no shift was entered for today, the button is grayed out and disabled — there's nothing to check in against.
 - **Calendar** (also doubles as Shifts, since this is part-time work with no fixed weekly pattern): tap any future date (shown in light purple once it has a shift) to add or edit that day's shift start time, or tap a purple day again to change/remove it. On-time days get a small gold star badge. Tap a past date with a shift and no recorded arrival to enter what time she actually got there — if that counts as late, it'll ask why (old habits vs. unforeseen circumstances) before saving. Tap a past date that already has a recorded arrival to see it, with an edit option to correct it. Also shows streak stats, an on-time-percentage toggle, and an arrival-time trend chart.
-- **Rewards**: tap "+ Add Reward" to upload a photo of a favorite musician and set how many days in a row unlocks it. Tap the pencil on any reward to edit or delete it. No code, ever — this screen is the entire way to customize rewards.
+- **Prizes**: fully read-only for her — shows how many days until the next prize, the four tiers (every 3 / 7 / 30 / 180 days), and a permanent history of every prize she's won, with the photo, title, tier, and date. The prize photo pool itself is managed in the repo, not the app — see `prizes/README.md`.
 - **Settings**: grace period (how many minutes late still counts as on time), celebration sound, and where you back up your data (Export Backup) — do this occasionally and save the file to Files/iCloud or AirDrop it to someone, so history survives a lost phone or a cleared browser.
 
 ## For the developer (redeploying changes)
@@ -35,10 +35,10 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v15"; // increment this
+const CACHE_NAME = "ontime-streak-v17"; // increment this
 
 // js/version.js
-export const APP_VERSION = "15"; // ...and this, to the same number
+export const APP_VERSION = "17"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.
@@ -54,15 +54,29 @@ If the manual check button itself is what's out of date (i.e. the icon is stuck 
 4. Only if that still doesn't work: have her tap **Export Backup** in Settings first, then **iPhone Settings → Safari → Advanced → Website Data**, find the site, delete its data (wipes the service worker/cache but also her on-device history — restore with **Import Backup** afterward).
 5. Last resort: restart the phone.
 
-### Local preview (desktop, for quick sanity checks only)
+### Local preview and testing (desktop)
 
 ```bash
 cd ontime-streak
 python3 -m http.server 8000
-# open http://localhost:8000 in a browser
+# open http://localhost:8000 in a regular desktop browser (Chrome/Firefox)
 ```
 
-Real installability, offline behavior, and safe-area layout can only be verified on an actual iPhone via the live GitHub Pages URL.
+This is enough to exercise the real app logic end-to-end — IndexedDB, the service worker, and the streak/prize calculations all work the same as on the phone (`localhost` counts as a secure context, so the service worker registers normally). Only installability, offline app-switching behavior, and iOS-specific safe-area/viewport quirks can't be verified this way and need an actual iPhone via the live GitHub Pages URL.
+
+**While iterating locally**, the service worker's cache-first strategy means it'll happily keep serving a stale copy of a file you just edited. Keep the browser's DevTools open with Network → "Disable cache" checked, or just use a private/incognito window, so every reload picks up your latest changes.
+
+**Testing the prize system without waiting real days:** open the browser console and use `window.__test`, defined in `js/devtools.js` (never exposed anywhere she'd stumble into it, but also never hidden — it's plain code, not a security boundary):
+
+```js
+__test.setStreak(6)       // wipes local data and fakes a 6-day streak ending yesterday,
+                           // with today's shift ready so tapping "הגעתי לעבודה" reaches day 7
+__test.previewPrize(30)   // shows the actual reveal modal for whatever day 30 would award,
+                           // picked from the real manifest, without saving or touching any data
+__test.reset()            // wipes all local data back to empty
+```
+
+These are destructive to whatever's in local storage — only run them against the local dev server or a throwaway browser profile, never against her real installed app.
 
 ## Known limitations
 

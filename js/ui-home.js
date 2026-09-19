@@ -1,6 +1,7 @@
 import { getCheckin, saveCheckin } from "./db.js";
-import { computeCheckinResult, getActiveReward, isNewMilestoneToday, getTierForStreak, formatLocalDate } from "./streak.js";
+import { computeCheckinResult, getTierForStreak, formatLocalDate } from "./streak.js";
 import { celebrate } from "./confetti.js";
+import { evaluateAndAwardPrize, getTierByKey, daysUntilNextPrize } from "./prizes.js";
 import { App, refreshAll, showModal, hideModal } from "./app.js";
 
 let els = {};
@@ -12,6 +13,7 @@ export function initHome() {
   els.longestStreak = document.getElementById("home-longest-streak");
   els.shiftInfo = document.getElementById("home-shift-info");
   els.rewardCard = document.getElementById("home-reward-card");
+  els.nextPrize = document.getElementById("home-next-prize");
   els.canvas = document.getElementById("celebration-canvas");
   els.revealModal = document.getElementById("reveal-modal");
   els.revealImg = document.getElementById("reveal-img");
@@ -41,7 +43,7 @@ async function handleCheckin() {
     return;
   }
 
-  celebrateOnTimeCheckin();
+  await celebrateOnTimeCheckin(today);
 }
 
 export function showLateFeedback() {
@@ -53,20 +55,21 @@ export function showLateFeedback() {
   showModal(els.revealModal);
 }
 
-export function celebrateOnTimeCheckin() {
+export async function celebrateOnTimeCheckin(dateStr) {
   const newStreak = App.currentStreak;
   const tier = getTierForStreak(newStreak);
   celebrate(els.canvas, tier, App.settings.soundEnabled);
 
-  const milestone = isNewMilestoneToday(App.rewards, newStreak);
-  if (milestone) {
-    showMilestoneReveal(milestone, newStreak);
+  const award = await evaluateAndAwardPrize(App, dateStr);
+  if (award) {
+    showPrizeReveal(award);
   }
 }
 
-function showMilestoneReveal(reward, streak) {
-  if (reward.imageBase64) {
-    els.revealImg.src = reward.imageBase64;
+export function showPrizeReveal(award) {
+  const tier = getTierByKey(award.tierKey);
+  if (award.prizeFile) {
+    els.revealImg.src = `prizes/${award.prizeFile}`;
     els.revealImg.style.display = "block";
     els.revealPlaceholder.style.display = "none";
   } else {
@@ -74,8 +77,8 @@ function showMilestoneReveal(reward, streak) {
     els.revealPlaceholder.style.display = "flex";
     els.revealPlaceholder.textContent = "🎉";
   }
-  els.revealTitle.textContent = `רצף של ${streak} ימים!`;
-  els.revealSub.textContent = `פתחת את ${reward.title}`;
+  els.revealTitle.textContent = `זכית בפרס! (${tier ? tier.label : ""})`;
+  els.revealSub.textContent = award.prizeTitle;
   showModal(els.revealModal);
 }
 
@@ -118,13 +121,14 @@ export function renderHome(app) {
       : "אין משמרת מתוכננת להיום";
   }
 
-  const active = getActiveReward(app.rewards, app.currentStreak);
+  const active = app.prizeAwards[0];
   if (active) {
+    const tier = getTierByKey(active.tierKey);
     els.rewardCard.innerHTML = `
-      <img src="${active.imageBase64 || ""}" alt="${escapeHtml(active.title)}" onerror="this.style.display='none'">
+      <img src="prizes/${active.prizeFile}" alt="${escapeHtml(active.prizeTitle)}" onerror="this.style.display='none'">
       <div>
-        <div class="reward-title">${escapeHtml(active.title)}</div>
-        <div class="reward-sub">נפתח ברצף של ${active.thresholdDays} ימים</div>
+        <div class="reward-title">${escapeHtml(active.prizeTitle)}</div>
+        <div class="reward-sub">${tier ? tier.label : ""} · יום ${active.streakDay}</div>
       </div>
     `;
   } else {
@@ -136,6 +140,11 @@ export function renderHome(app) {
       </div>
     `;
   }
+
+  const next = daysUntilNextPrize(app.currentStreak);
+  els.nextPrize.textContent = next
+    ? `הפרס הבא בעוד ${next.days} ${next.days === 1 ? "יום" : "ימים"}`
+    : "";
 }
 
 function escapeHtml(str) {

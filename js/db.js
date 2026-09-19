@@ -1,5 +1,5 @@
 const DB_NAME = "ontimeStreakDB";
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 let dbPromise = null;
 
@@ -15,8 +15,11 @@ function openDB() {
       if (!db.objectStoreNames.contains("checkins")) {
         db.createObjectStore("checkins", { keyPath: "date" });
       }
-      if (!db.objectStoreNames.contains("rewards")) {
-        db.createObjectStore("rewards", { keyPath: "id", autoIncrement: true });
+      if (db.objectStoreNames.contains("rewards")) {
+        db.deleteObjectStore("rewards");
+      }
+      if (!db.objectStoreNames.contains("prizeAwards")) {
+        db.createObjectStore("prizeAwards", { keyPath: "date" });
       }
       if (!db.objectStoreNames.contains("meta")) {
         db.createObjectStore("meta", { keyPath: "id" });
@@ -77,21 +80,19 @@ export async function saveCheckin(record) {
   await wrap(store.put(record));
 }
 
-export async function getAllRewards() {
-  const store = await tx("rewards", "readonly");
-  const list = await wrap(store.getAll());
-  return list.sort((a, b) => a.thresholdDays - b.thresholdDays);
+export async function getAllPrizeAwards() {
+  const store = await tx("prizeAwards", "readonly");
+  return wrap(store.getAll());
 }
 
-export async function saveReward(reward) {
-  const store = await tx("rewards", "readwrite");
-  const id = await wrap(store.put(reward));
-  return id;
+export async function savePrizeAward(award) {
+  const store = await tx("prizeAwards", "readwrite");
+  await wrap(store.put(award));
 }
 
-export async function deleteReward(id) {
-  const store = await tx("rewards", "readwrite");
-  await wrap(store.delete(id));
+export async function deletePrizeAward(date) {
+  const store = await tx("prizeAwards", "readwrite");
+  await wrap(store.delete(date));
 }
 
 export async function getAllShifts() {
@@ -126,10 +127,10 @@ export async function saveStreakState(state) {
 }
 
 export async function exportAllData() {
-  const [settings, checkins, rewards, shifts, streakState] = await Promise.all([
+  const [settings, checkins, prizeAwards, shifts, streakState] = await Promise.all([
     getSettings(),
     getAllCheckins(),
-    getAllRewards(),
+    getAllPrizeAwards(),
     getAllShifts(),
     getStreakState(),
   ]);
@@ -138,7 +139,7 @@ export async function exportAllData() {
     version: DB_VERSION,
     settings,
     checkins,
-    rewards,
+    prizeAwards,
     shifts,
     streakState,
   };
@@ -154,10 +155,10 @@ export async function importAllData(data) {
     await wrap(checkinsStore.put(rec));
   }
 
-  const rewardsStore = await tx("rewards", "readwrite");
-  await wrap(rewardsStore.clear());
-  for (const rec of data.rewards || []) {
-    await wrap(rewardsStore.put(rec));
+  const prizeAwardsStore = await tx("prizeAwards", "readwrite");
+  await wrap(prizeAwardsStore.clear());
+  for (const rec of data.prizeAwards || []) {
+    await wrap(prizeAwardsStore.put(rec));
   }
 
   const shiftsStore = await tx("shifts", "readwrite");
@@ -171,7 +172,7 @@ export async function importAllData(data) {
 }
 
 export async function resetAllData() {
-  const stores = ["settings", "checkins", "rewards", "shifts", "meta"];
+  const stores = ["settings", "checkins", "prizeAwards", "shifts", "meta"];
   for (const name of stores) {
     const store = await tx(name, "readwrite");
     await wrap(store.clear());

@@ -362,7 +362,7 @@ async function finalizeCheckin(lateReason, resultOverride) {
   await refreshAll();
 
   if (result.status === "on-time") {
-    celebrateOnTimeCheckin();
+    await celebrateOnTimeCheckin(result.date);
   } else {
     showLateFeedback();
   }

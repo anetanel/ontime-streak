@@ -98,16 +98,6 @@ export function computeLongestStreak(checkinsByDate, shiftsByDate, today = new D
   return longest;
 }
 
-export function getActiveReward(rewards, streak) {
-  const eligible = rewards.filter((r) => r.thresholdDays <= streak);
-  if (eligible.length === 0) return null;
-  return eligible.reduce((best, r) => (r.thresholdDays > best.thresholdDays ? r : best));
-}
-
-export function isNewMilestoneToday(rewards, streak) {
-  return rewards.find((r) => r.thresholdDays === streak) || null;
-}
-
 export function getTierForStreak(streak) {
   if (streak >= 30) return "max";
   if (streak >= 14) return "bigFireworks";
