@@ -1,6 +1,7 @@
 const COLORS = ["#ff7a1a", "#ffd60a", "#34c759", "#0a84ff", "#ff375f", "#bf5af2", "#f5ebdc"];
 const RIBBON_COLORS = ["#FFD700", "#FF69B4", "#00CED1", "#FF4500"];
 const SPECIAL_EMOJIS = ["🌈", "⭐", "🦄"];
+const MAX_SPECIAL_EMOJIS = ["🌈", "⭐", "🦄", "🏅"];
 
 function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -97,7 +98,7 @@ class ParticleEngine {
     }
   }
 
-  addEmojiBurst(count, originX, originY) {
+  addEmojiBurst(count, originX, originY, pool = SPECIAL_EMOJIS) {
     for (let i = 0; i < count; i++) {
       const angle = Math.random() * Math.PI * 2;
       const speed = 1.5 + Math.random() * 4;
@@ -108,7 +109,7 @@ class ParticleEngine {
         vy: Math.sin(angle) * speed - 3,
         rotation: Math.random() * Math.PI,
         rotationSpeed: (Math.random() - 0.5) * 0.12,
-        emoji: SPECIAL_EMOJIS[(Math.random() * SPECIAL_EMOJIS.length) | 0],
+        emoji: pool[(Math.random() * pool.length) | 0],
         size: 22 + Math.random() * 10,
         gravity: 0.08,
         drag: 0.985,
@@ -268,8 +269,8 @@ const TIER_CONFIG = {
   small: { burstCount: 1, particlesPerBurst: 40, duration: 1500, shells: 0, sound: null, emojiRounds: 0, ribbonEveryMs: 0 },
   medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, sound: "chime", emojiRounds: 0, ribbonEveryMs: 0 },
   large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, sound: "chime", emojiRounds: 0, ribbonEveryMs: 0 },
-  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer", emojiRounds: 1, ribbonEveryMs: 1800 },
-  max: { burstCount: 8, particlesPerBurst: 65, duration: 6000, shells: 8, sound: "cheer", emojiRounds: 2, ribbonEveryMs: 1500 },
+  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer", emojiRounds: 1, emojiPool: SPECIAL_EMOJIS, ribbonEveryMs: 1800 },
+  max: { burstCount: 8, particlesPerBurst: 65, duration: 6000, shells: 8, sound: "cheer", emojiRounds: 2, emojiPool: MAX_SPECIAL_EMOJIS, ribbonEveryMs: 1500 },
 };
 
 export function celebrate(canvas, tier, soundEnabled) {
@@ -304,7 +305,7 @@ export function celebrate(canvas, tier, soundEnabled) {
         const delay = ((i + 1) / (config.emojiRounds + 1)) * config.duration;
         const x = w * (0.2 + Math.random() * 0.6);
         const y = h * (0.15 + Math.random() * 0.2);
-        setTimeout(() => engine.addEmojiBurst(8, x, y), delay);
+        setTimeout(() => engine.addEmojiBurst(8, x, y, config.emojiPool), delay);
       }
     }
     if (config.ribbonEveryMs > 0) {
