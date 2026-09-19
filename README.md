@@ -32,13 +32,17 @@ git push
 
 GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
-**Important:** whenever you change any file that the app loads (HTML/CSS/JS/icons), bump the cache name in `sw.js`:
+**Important:** whenever you change any file that the app loads (HTML/CSS/JS/icons), bump the cache name in `sw.js` **and** the matching number in `js/version.js`, keeping them the same number:
 
 ```js
-const CACHE_NAME = "ontime-streak-v3"; // increment this
+// sw.js
+const CACHE_NAME = "ontime-streak-v5"; // increment this
+
+// js/version.js
+export const APP_VERSION = "5"; // ...and this, to the same number
 ```
 
-This is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely.
+Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.
 
 ### Local preview (desktop, for quick sanity checks only)
 

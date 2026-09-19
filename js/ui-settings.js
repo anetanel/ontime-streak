@@ -1,6 +1,7 @@
 import { saveSettings, resetAllData } from "./db.js";
 import { App, refreshAll } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
+import { APP_VERSION } from "./version.js";
 
 let els = {};
 let saveTimer = null;
@@ -14,6 +15,8 @@ export function initSettings() {
   els.importFile = document.getElementById("import-file");
   els.lastBackupLabel = document.getElementById("last-backup-label");
   els.resetBtn = document.getElementById("reset-btn");
+  els.version = document.getElementById("app-version");
+  els.version.textContent = APP_VERSION;
 
   els.grace.addEventListener("change", debounceSaveSettings);
   els.sound.addEventListener("change", debounceSaveSettings);
