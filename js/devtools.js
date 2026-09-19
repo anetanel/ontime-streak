@@ -7,7 +7,7 @@ import { findMatchingTier, pickRandomPrize } from "./prizes.js";
 import { showPrizeReveal } from "./ui-home.js";
 import { celebrate } from "./confetti.js";
 
-const CELEBRATION_TIERS = ["small", "medium", "fireworks", "bigFireworks", "max"];
+const CELEBRATION_TIERS = ["small", "medium", "large", "xlarge", "max"];
 
 async function setStreak(days) {
   if (!Number.isInteger(days) || days < 0) {
@@ -66,7 +66,7 @@ function previewCelebration(tierOrStreak) {
   } else if (Number.isInteger(tierOrStreak) && tierOrStreak >= 1) {
     tier = getTierForStreak(tierOrStreak);
   } else {
-    console.log('[test] Usage: __test.previewCelebration(45) or __test.previewCelebration("fireworks")');
+    console.log('[test] Usage: __test.previewCelebration(45) or __test.previewCelebration("large")');
     return;
   }
 

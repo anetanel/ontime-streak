@@ -199,9 +199,9 @@ class ParticleEngine {
 const TIER_CONFIG = {
   small: { particles: 40, duration: 1500, shells: 0, sound: null },
   medium: { particles: 100, duration: 2500, shells: 0, sound: "chime" },
-  fireworks: { particles: 0, duration: 4000, shells: 3, sound: "chime" },
-  bigFireworks: { particles: 0, duration: 5000, shells: 5, sound: "cheer" },
-  max: { particles: 0, duration: 6000, shells: 8, sound: "cheer" },
+  large: { particles: 60, duration: 4000, shells: 3, sound: "chime" },
+  xlarge: { particles: 100, duration: 5000, shells: 5, sound: "cheer" },
+  max: { particles: 150, duration: 6000, shells: 8, sound: "cheer" },
 };
 
 export function celebrate(canvas, tier, soundEnabled) {
@@ -215,17 +215,20 @@ export function celebrate(canvas, tier, soundEnabled) {
 
   if (reduced) {
     engine.addConfettiBurst(15, w / 2, h * 0.3);
-  } else if (config.shells > 0) {
-    for (let i = 0; i < config.shells; i++) {
-      const x = w * (0.2 + Math.random() * 0.6);
-      const targetY = h * (0.2 + Math.random() * 0.25);
-      engine.addFireworkShell(i * (config.duration / (config.shells + 1)), x, targetY);
-    }
   } else {
-    engine.addConfettiBurst(config.particles, w / 2, h * 0.25);
-    if (config.particles > 60) {
-      setTimeout(() => engine.addConfettiBurst(config.particles / 2, w * 0.25, h * 0.2), 200);
-      setTimeout(() => engine.addConfettiBurst(config.particles / 2, w * 0.75, h * 0.2), 400);
+    if (config.particles > 0) {
+      engine.addConfettiBurst(config.particles, w / 2, h * 0.25);
+      if (config.particles > 60) {
+        setTimeout(() => engine.addConfettiBurst(config.particles / 2, w * 0.25, h * 0.2), 200);
+        setTimeout(() => engine.addConfettiBurst(config.particles / 2, w * 0.75, h * 0.2), 400);
+      }
+    }
+    if (config.shells > 0) {
+      for (let i = 0; i < config.shells; i++) {
+        const x = w * (0.2 + Math.random() * 0.6);
+        const targetY = h * (0.2 + Math.random() * 0.25);
+        engine.addFireworkShell(i * (config.duration / (config.shells + 1)), x, targetY);
+      }
     }
   }
 

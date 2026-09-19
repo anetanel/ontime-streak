@@ -127,8 +127,8 @@ export function isLateExemptionAvailable(checkinsByDate, shiftsByDate, dateStr) 
 
 export function getTierForStreak(streak) {
   if (streak >= 30) return "max";
-  if (streak >= 14) return "bigFireworks";
-  if (streak >= 7) return "fireworks";
+  if (streak >= 14) return "xlarge";
+  if (streak >= 7) return "large";
   if (streak >= 3) return "medium";
   return "small";
 }

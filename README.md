@@ -36,10 +36,10 @@ GitHub Pages redeploys automatically within a minute or two of a push to `main`.
 
 ```js
 // sw.js
-const CACHE_NAME = "ontime-streak-v21"; // increment this
+const CACHE_NAME = "ontime-streak-v22"; // increment this
 
 // js/version.js
-export const APP_VERSION = "21"; // ...and this, to the same number
+export const APP_VERSION = "22"; // ...and this, to the same number
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.
@@ -75,7 +75,7 @@ __test.setStreak(6)                 // wipes local data and fakes a 6-day streak
 __test.previewPrize(30)             // shows the actual reveal modal for whatever day 30 would award,
                                      // picked from the real manifest, without saving or touching any data
 __test.previewCelebration(45)       // plays the confetti/fireworks tier a 45-day streak would trigger
-__test.previewCelebration("max")    // or name a tier directly: small, medium, fireworks, bigFireworks, max
+__test.previewCelebration("max")    // or name a tier directly: small, medium, large, xlarge, max
 __test.previewAllCelebrations()     // plays all 5 tiers back to back, a few seconds apart
 __test.reset()                      // wipes all local data back to empty
 ```
