@@ -53,7 +53,7 @@ body {
 .screen {
   flex: 1;
   overflow-y: auto;
-  padding: calc(var(--safe-top) + 14px) 16px 24px;
+  padding: calc(var(--safe-top) + 14px) 16px calc(76px + var(--safe-bottom));
   display: none;
   -webkit-overflow-scrolling: touch;
 }
@@ -169,12 +169,17 @@ body {
 .reward-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
 
 .tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   background: var(--tab-bg);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
   padding-bottom: var(--safe-bottom);
+  z-index: 40;
 }
 
 .tabbar button {
