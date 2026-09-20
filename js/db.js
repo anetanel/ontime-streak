@@ -60,6 +60,19 @@ async function putAll(householdId, collectionName, records, idField) {
   }
 }
 
+// Comments are matched to a prize award by date, not a stable id, so
+// whenever an award for a date is removed, any comments left on it need
+// removing too — otherwise a later, unrelated award that lands on the
+// same date silently inherits them.
+async function deleteCommentsForDate(householdId, date) {
+  const q = query(householdCollection(householdId, "comments"), where("prizeAwardDate", "==", date));
+  const snap = await getDocs(q);
+  if (snap.empty) return;
+  const batch = writeBatch(db);
+  snap.docs.forEach((d) => batch.delete(d.ref));
+  await batch.commit();
+}
+
 export const DEFAULT_SETTINGS = {
   id: "settings",
   graceMinutes: 5,
@@ -109,7 +122,9 @@ export async function savePrizeAward(award) {
 }
 
 export async function deletePrizeAward(date) {
-  await deleteDoc(householdDoc(myHouseholdId(), "prizeAwards", date));
+  const householdId = myHouseholdId();
+  await deleteDoc(householdDoc(householdId, "prizeAwards", date));
+  await deleteCommentsForDate(householdId, date);
 }
 
 export async function getAllShifts() {
@@ -182,6 +197,7 @@ export async function resetAllData() {
   await clearCollection(householdId, "checkins");
   await clearCollection(householdId, "prizeAwards");
   await clearCollection(householdId, "shifts");
+  await clearCollection(householdId, "comments");
 }
 
 // --- Guest invite links (read + comment only, no login) ---
