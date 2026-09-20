@@ -1,4 +1,4 @@
-import { getMyInvites, createInvite, setInviteActive, deleteInvite } from "./db.js";
+import { getMyInvites, createInvite, setInviteActive, deleteInvite, getMyGuestGrants, revokeGuestGrant } from "./db.js";
 import { showModal, hideModal } from "./app.js";
 
 let els = {};
@@ -38,7 +38,7 @@ async function refresh() {
   els.list.innerHTML = "";
   els.empty.style.display = "none";
 
-  const invites = await getMyInvites();
+  const [invites, grants] = await Promise.all([getMyInvites(), getMyGuestGrants()]);
   invites.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 
   if (!invites.length) {
@@ -46,7 +46,12 @@ async function refresh() {
     return;
   }
 
-  els.list.innerHTML = invites.map(renderInviteRow).join("");
+  const grantsByInvite = {};
+  grants.forEach((g) => {
+    (grantsByInvite[g.invite] ||= []).push(g);
+  });
+
+  els.list.innerHTML = invites.map((invite) => renderInviteRow(invite, grantsByInvite[invite.id] || [])).join("");
 
   els.list.querySelectorAll("[data-invite-toggle]").forEach((el) => {
     el.addEventListener("change", async (e) => {
@@ -69,19 +74,43 @@ async function refresh() {
 
   els.list.querySelectorAll("[data-delete-invite]").forEach((el) => {
     el.addEventListener("click", async () => {
-      if (!confirm("למחוק את ההזמנה? מי שכבר נכנס עם הקישור הזה ימשיך לראות — לחסום אותה/אותו צריך להסיר את זה בנפרד.")) return;
+      if (!confirm("למחוק את קישור ההזמנה? זה רק מונע הצטרפות חדשה דרכו — מי שכבר מחובר/ת ימשיך/תמשיך לראות, אלא אם תבטלי את הגישה שלו/ה ברשימת \"מחוברים\" למטה.")) return;
       await deleteInvite(el.dataset.id);
+      await refresh();
+    });
+  });
+
+  els.list.querySelectorAll("[data-revoke-guest]").forEach((el) => {
+    el.addEventListener("click", async () => {
+      if (!confirm("לבטל את הגישה של האורחת/האורח הזו? לא תוכל/י יותר לראות או להגיב, עד שתקבל/י קישור הזמנה חדש.")) return;
+      await revokeGuestGrant(el.dataset.uid);
       await refresh();
     });
   });
 }
 
-function renderInviteRow(invite) {
+function renderInviteRow(invite, guestGrants) {
+  const guestsHtml = guestGrants
+    .slice()
+    .sort((a, b) => (a.grantedAt < b.grantedAt ? -1 : 1))
+    .map(
+      (g) => `
+        <div class="comment-item">
+          <div class="comment-content">
+            <div>${escapeHtml(g.label || "אורחת")}</div>
+            <div class="comment-time">מחוברת מאז ${formatDate(g.grantedAt)}</div>
+          </div>
+          <button class="icon-btn" data-revoke-guest data-uid="${g.uid}" title="ביטול גישה">🚫</button>
+        </div>
+      `
+    )
+    .join("");
+
   return `
     <div class="invite-item">
       <div class="invite-info">
         <div class="invite-label">${escapeHtml(invite.label || "ללא שם")}</div>
-        <div class="stat-label">${invite.active ? "פעיל" : "מבוטל"}</div>
+        <div class="stat-label">${invite.active ? "פעיל" : "מבוטל"}${guestGrants.length ? ` · ${guestGrants.length} מחוברים` : ""}</div>
       </div>
       <label class="switch">
         <input type="checkbox" ${invite.active ? "checked" : ""} data-invite-toggle data-id="${invite.id}">
@@ -91,7 +120,12 @@ function renderInviteRow(invite) {
       <button class="icon-btn" data-copy-link data-id="${invite.id}" title="העתקת קישור">🔗</button>
       <button class="icon-btn" data-delete-invite data-id="${invite.id}" title="מחיקה">🗑️</button>
     </div>
+    ${guestGrants.length ? `<div class="comments-list">${guestsHtml}</div>` : ""}
   `;
+}
+
+function formatDate(iso) {
+  return new Date(iso).toLocaleDateString("he-IL", { day: "numeric", month: "numeric", year: "numeric" });
 }
 
 async function handleCreate() {

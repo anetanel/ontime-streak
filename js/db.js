@@ -273,3 +273,16 @@ export async function setInviteActive(inviteId, active) {
 export async function deleteInvite(inviteId) {
   await deleteDoc(doc(db, "invites", inviteId));
 }
+
+// A guest's access (guestGrants/{uid}) is independent of the invite doc
+// once redeemed — deleting the invite only stops new redemptions. This is
+// what actually cuts off someone who already has access.
+export async function getMyGuestGrants() {
+  const q = query(collection(db, "guestGrants"), where("householdId", "==", myHouseholdId()));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
+}
+
+export async function revokeGuestGrant(uid) {
+  await deleteDoc(doc(db, "guestGrants", uid));
+}
