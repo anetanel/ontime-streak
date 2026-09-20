@@ -1,4 +1,4 @@
-import { getSettings, getAllCheckins, getAllShifts, getAllPrizeAwards, saveStreakState, getStreakState } from "./db.js";
+import { getSettings, getAllCheckins, getAllShifts, getAllPrizeAwards, getMyComments, saveStreakState, getStreakState } from "./db.js";
 import { formatLocalDate, computeStreak, computeLongestStreak } from "./streak.js";
 import { loadPrizeManifest } from "./prizes.js";
 import { initHome, renderHome } from "./ui-home.js";
@@ -17,17 +17,19 @@ export const App = {
   shifts: [],
   shiftsByDate: new Map(),
   prizeAwards: [],
+  commentsByAward: new Map(),
   prizeManifest: null,
   currentStreak: 0,
   longestStreak: 0,
 };
 
 export async function loadAll() {
-  const [settings, checkins, shifts, prizeAwards, streakState] = await Promise.all([
+  const [settings, checkins, shifts, prizeAwards, comments, streakState] = await Promise.all([
     getSettings(),
     getAllCheckins(),
     getAllShifts(),
     getAllPrizeAwards(),
+    getMyComments(),
     getStreakState(),
   ]);
 
@@ -37,6 +39,12 @@ export async function loadAll() {
   App.shifts = shifts;
   App.shiftsByDate = new Map(shifts.map((s) => [s.date, s]));
   App.prizeAwards = prizeAwards.sort((a, b) => (a.date < b.date ? 1 : -1));
+
+  App.commentsByAward = new Map();
+  comments.forEach((c) => {
+    if (!App.commentsByAward.has(c.prizeAwardDate)) App.commentsByAward.set(c.prizeAwardDate, []);
+    App.commentsByAward.get(c.prizeAwardDate).push(c);
+  });
 
   const now = new Date();
   const current = computeStreak(App.checkinsByDate, App.shiftsByDate, now);

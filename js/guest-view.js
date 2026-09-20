@@ -72,7 +72,16 @@ function renderAwardCard(award, awardComments) {
   const commentsHtml = awardComments
     .slice()
     .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
-    .map((c) => `<div class="comment-item"><b>${escapeHtml(c.authorLabel || "אורחת")}:</b> ${escapeHtml(c.text)}</div>`)
+    .map(
+      (c) => `
+        <div class="comment-item">
+          <div class="comment-content">
+            <div><b>${escapeHtml(c.authorLabel || "אורחת")}:</b> ${escapeHtml(c.text)}</div>
+            <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
+          </div>
+        </div>
+      `
+    )
     .join("");
 
   return `
@@ -116,6 +125,13 @@ async function handleCommentSubmit(e) {
     alert("שליחת התגובה נכשלה. נסי שוב.");
     btn.disabled = false;
   }
+}
+
+function formatCommentTime(iso) {
+  const d = new Date(iso);
+  const dateLabel = d.toLocaleDateString("he-IL", { day: "numeric", month: "numeric", year: "numeric" });
+  const timeLabel = d.toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" });
+  return `${dateLabel} · ${timeLabel}`;
 }
 
 function escapeHtml(str) {

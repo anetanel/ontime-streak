@@ -95,6 +95,15 @@ export async function getAllPrizeAwards() {
   return getAllDocs(myHouseholdId(), "prizeAwards");
 }
 
+export async function getMyComments() {
+  const snap = await getDocs(householdCollection(myHouseholdId(), "comments"));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function deleteMyComment(commentId) {
+  await deleteDoc(householdDoc(myHouseholdId(), "comments", commentId));
+}
+
 export async function savePrizeAward(award) {
   await setDoc(householdDoc(myHouseholdId(), "prizeAwards", award.date), award);
 }

@@ -95,12 +95,32 @@ body {
 }
 
 .comment-item {
-  font-size: 13px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   padding: 6px 0;
   border-bottom: 1px solid var(--border);
 }
 
 .comment-item:last-child { border-bottom: none; }
+
+.comment-content {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+}
+
+.comment-time {
+  font-size: 11px;
+  color: var(--text-dim);
+  margin-top: 1px;
+}
+
+.comment-item .icon-btn {
+  padding: 2px;
+  font-size: 14px;
+  flex-shrink: 0;
+}
 
 .comment-form {
   display: flex;
