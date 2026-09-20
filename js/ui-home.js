@@ -138,7 +138,7 @@ async function handleArrivalTimeSave() {
   const minute = parseInt(els.checkinMinute.value, 10);
   const arrivalDateTime = new Date(d.getFullYear(), d.getMonth(), d.getDate(), hour, minute, 0, 0);
   const shift = App.shiftsByDate.get(checkinEditingDate);
-  const result = computeCheckinResult(arrivalDateTime, shift, App.settings.graceMinutes);
+  const result = computeCheckinResult(arrivalDateTime, shift);
 
   hideModal(els.checkinModal);
   await commitCheckinResult(result);
@@ -177,7 +177,7 @@ async function handleCheckin() {
   const todayShift = App.shiftsByDate.get(today);
   if (!todayShift) return;
 
-  const result = computeCheckinResult(new Date(), todayShift, App.settings.graceMinutes);
+  const result = computeCheckinResult(new Date(), todayShift);
   await commitCheckinResult(result);
 }
 

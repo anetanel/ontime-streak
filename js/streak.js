@@ -26,10 +26,10 @@ export function snapToTimeOptions(startTime) {
   return { hour: String(h).padStart(2, "0"), minute: String(m).padStart(2, "0") };
 }
 
-export function computeCheckinResult(now, shift, graceMinutes) {
+export function computeCheckinResult(now, shift) {
   const dateStr = formatLocalDate(now);
   const [h, m] = shift.startTime.split(":").map(Number);
-  const deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m + graceMinutes, 0, 0);
+  const deadline = new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m, 0, 0);
   const isLate = now.getTime() > deadline.getTime();
   const minutesLate = isLate ? Math.round((now.getTime() - deadline.getTime()) / 60000) : 0;
   return {

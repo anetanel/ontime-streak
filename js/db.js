@@ -75,7 +75,6 @@ async function deleteCommentsForDate(householdId, date) {
 
 export const DEFAULT_SETTINGS = {
   id: "settings",
-  graceMinutes: 5,
   soundEnabled: true,
   themePreference: "system",
   lastBackupAt: null,

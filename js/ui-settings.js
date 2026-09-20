@@ -13,7 +13,6 @@ export function initSettings() {
   els.accountName = document.getElementById("account-name");
   els.accountEmail = document.getElementById("account-email");
   els.accountSignoutBtn = document.getElementById("account-signout-btn");
-  els.grace = document.getElementById("set-grace");
   els.sound = document.getElementById("set-sound");
   els.banner = document.getElementById("backup-banner");
   els.exportBtn = document.getElementById("export-btn");
@@ -29,7 +28,6 @@ export function initSettings() {
   renderAccount();
   els.accountSignoutBtn.addEventListener("click", () => signOutUser());
 
-  els.grace.addEventListener("change", debounceSaveSettings);
   els.sound.addEventListener("change", debounceSaveSettings);
 
   els.exportBtn.addEventListener("click", handleExport);
@@ -83,7 +81,6 @@ function debounceSaveSettings() {
 async function commitSettings() {
   const settings = {
     ...App.settings,
-    graceMinutes: parseInt(els.grace.value, 10) || 0,
     soundEnabled: els.sound.checked,
   };
 
@@ -123,7 +120,6 @@ async function handleReset() {
 }
 
 export function renderSettings(app) {
-  els.grace.value = app.settings.graceMinutes;
   els.sound.checked = app.settings.soundEnabled;
 
   if (app.settings.lastBackupAt) {
