@@ -86,8 +86,8 @@ async function handleAuthState(user) {
 
 async function tryRedeemInvite(inviteId, uid) {
   const invite = await getInvite(inviteId);
-  if (!invite || !invite.active) return null;
-  await redeemInvite(inviteId, uid, invite.label || "");
+  if (!invite || !invite.active || !invite.ownerId) return null;
+  await redeemInvite(inviteId, uid, invite.label || "", invite.ownerId);
   return getGuestGrant(uid);
 }
 

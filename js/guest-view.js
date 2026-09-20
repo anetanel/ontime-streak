@@ -1,5 +1,5 @@
 import { auth } from "./firebase-init.js";
-import { getAllPrizeAwards, getAllComments, addComment } from "./db.js";
+import { getPrizeAwardsForHousehold, getCommentsForHousehold, addCommentToHousehold } from "./db.js";
 import { getTierByKey } from "./prizes.js";
 
 let currentGrant = null;
@@ -12,7 +12,10 @@ export async function renderGuestView(grant) {
 }
 
 async function refresh() {
-  const [awards, comments] = await Promise.all([getAllPrizeAwards(), getAllComments()]);
+  const [awards, comments] = await Promise.all([
+    getPrizeAwardsForHousehold(currentGrant.householdId),
+    getCommentsForHousehold(currentGrant.householdId),
+  ]);
   awards.sort((a, b) => (a.date < b.date ? 1 : -1));
 
   const commentsByAward = {};
@@ -68,7 +71,8 @@ async function handleCommentSubmit(e) {
   const btn = form.querySelector("button");
   btn.disabled = true;
   try {
-    await addComment({
+    await addCommentToHousehold({
+      householdId: currentGrant.householdId,
       prizeAwardDate: form.dataset.awardDate,
       authorUid: auth.currentUser.uid,
       authorLabel: currentGrant.label || "אורחת",

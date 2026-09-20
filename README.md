@@ -57,7 +57,7 @@ If the manual check button itself is what's out of date (i.e. the icon is stuck 
 
 ### Firebase (data backend)
 
-As of v31, her data lives in Firestore instead of on-device IndexedDB, under one shared `household/main/...` tree. There's still no server *we* run: the app talks to Firebase's servers directly from the browser, same "no build step" static JS as everything else, just backed by a cloud database instead of a local one.
+As of v31, her data lives in Firestore instead of on-device IndexedDB. Each admin has their own separate household under `households/{their Google uid}/...` — this is what keeps your own testing completely isolated from her real data, since you're never signed in as the same identity. There's still no server *we* run: the app talks to Firebase's servers directly from the browser, same "no build step" static JS as everything else, just backed by a cloud database instead of a local one.
 
 - `js/firebase-config.js` holds the project's public identifiers (apiKey, projectId, etc.) — these aren't secrets, they just say which Firebase project to talk to — plus `ADMIN_EMAILS`, the two Google accounts allowed in as admins. Access control is entirely in `firestore.rules`, not in hiding this file.
 - `firestore.rules` (repo root) is the source of truth for security rules, but there's no CLI in this toolchain (no npm on this machine) to deploy it automatically — paste its contents into Firebase Console → Firestore Database → Rules by hand whenever it changes. **The repo copy and the console copy silently drift apart if you forget this step** — a rule change with no matching console paste fails closed (permission-denied on paths the new rule was supposed to allow), which is exactly what happened once already while building this.
@@ -67,16 +67,17 @@ As of v31, her data lives in Firestore instead of on-device IndexedDB, under one
 
 Sign-in uses `signInWithPopup`, not `signInWithRedirect`. Redirect was tried first (it's Firebase's usual mobile guidance) but doesn't work in Safari: it resolves the redirect result via a hidden iframe on the authDomain talking back over `postMessage`, and Safari's Intelligent Tracking Prevention blocks that iframe (a third-party context) from its own storage — confirmed in the field, on both a regular Safari tab and the installed Home Screen icon, with no catchable JS error on either. A popup is a real top-level window, not a third-party iframe, so it sidesteps that restriction, and since it opens directly from the button tap (a real user gesture) Safari doesn't block it. If you ever revisit this, don't switch back to redirect without solving the ITP issue first.
 
-**Guests (invite links, no login).** Someone she wants to share achievements with opens a link like `https://anetanel.github.io/ontime-streak/?invite=<id>` and is let in invisibly (anonymous Firebase auth under the hood) — they never see the Google sign-in screen. Guests can only read `prizeAwards` and post/read `comments`; they can't see her check-in history, shifts, or settings, and can't write anything except a comment. To invite someone:
-1. Firebase Console → **Firestore Database → Data** → **Start collection** (or add to it if it exists) → collection ID `invites`.
-2. **Auto-ID** for the document ID.
-3. Fields: `label` (string, e.g. `"Dana"` — this is what shows next to her comments) and `active` (boolean, `true`).
-4. Save, then copy that document's ID from the top of the page — the invite link is `https://anetanel.github.io/ontime-streak/?invite=<that id>`.
-5. To revoke later: flip `active` to `false` on that invite doc (existing guests who already redeemed it keep access via their own `guestGrants` doc — deleting *that* guest's `guestGrants/{uid}` doc, found by matching its `invite` field, is what actually cuts them off).
+**Guests (invite links, no login).** Someone she wants to share achievements with opens a link like `https://anetanel.github.io/ontime-streak/?invite=<id>` and is let in invisibly (anonymous Firebase auth under the hood) — they never see the Google sign-in screen. Each invite names exactly one admin's household (`ownerId`), so a guest only ever sees that one person's achievements — never the other admin's, never check-in history, shifts, or settings, and can't write anything except a comment. To invite someone to **her** achievements specifically:
+1. Firebase Console → **Authentication → Users** → find her row (by email) → copy her **User UID** column value.
+2. **Firestore Database → Data** → **Start collection** (or add to it if it exists) → collection ID `invites`.
+3. **Auto-ID** for the document ID.
+4. Fields: `label` (string, e.g. `"Dana"` — shows next to her comments), `active` (boolean, `true`), and `ownerId` (string) — paste her UID from step 1 here. Getting `ownerId` wrong (e.g. pasting your own UID) means the guest ends up looking at *your* test household instead of hers.
+5. Save, then copy that document's ID from the top of the page — the invite link is `https://anetanel.github.io/ontime-streak/?invite=<that id>`.
+6. To revoke later: flip `active` to `false` on that invite doc (existing guests who already redeemed it keep access via their own `guestGrants` doc — deleting *that* guest's `guestGrants/{uid}` doc, found by matching its `invite` field, is what actually cuts them off).
 
-There's no in-app UI for creating invites yet — this is a manual console step for now.
+There's no in-app UI for creating invites yet — this is a manual console step for now. (An invite created before this admin-household split had no `ownerId` field and no longer works — recreate it.)
 
-**Testing note:** since both admins share the one real household, there is no separate "test data" — see the warning at the top of `js/devtools.js` before running any `window.__test` command.
+**Testing note:** `window.__test` commands only ever touch whichever admin account is currently signed in on *this* browser — see the note at the top of `js/devtools.js`. Just make sure that's you, not her.
 
 ### Local preview and testing (desktop)
 

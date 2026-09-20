@@ -1,4 +1,4 @@
-import { db } from "./firebase-init.js";
+import { auth, db } from "./firebase-init.js";
 import {
   doc,
   getDoc,
@@ -12,20 +12,23 @@ import {
 
 const DATA_VERSION = 4; // bumped from 3 (IndexedDB) with the move to Firestore
 
-// One shared household — access is controlled by Google account email via
-// firestore.rules (see the isAdmin() check there), not by this path.
-const ROOT = ["household", "main"];
-
-function householdDoc(...segments) {
-  return doc(db, ...ROOT, ...segments);
+// Each admin (her, you) gets their own household keyed by their own Google
+// uid — see firestore.rules. This is what keeps your test data completely
+// separate from her real one.
+function myHouseholdId() {
+  return auth.currentUser.uid;
 }
 
-function householdCollection(name) {
-  return collection(db, ...ROOT, name);
+function householdDoc(householdId, ...segments) {
+  return doc(db, "households", householdId, ...segments);
 }
 
-async function getAllDocs(collectionName) {
-  const snap = await getDocs(householdCollection(collectionName));
+function householdCollection(householdId, name) {
+  return collection(db, "households", householdId, name);
+}
+
+async function getAllDocs(householdId, collectionName) {
+  const snap = await getDocs(householdCollection(householdId, collectionName));
   return snap.docs.map((d) => d.data());
 }
 
@@ -37,8 +40,8 @@ function chunk(arr, size) {
   return out;
 }
 
-async function clearCollection(collectionName) {
-  const snap = await getDocs(householdCollection(collectionName));
+async function clearCollection(householdId, collectionName) {
+  const snap = await getDocs(householdCollection(householdId, collectionName));
   for (const group of chunk(snap.docs, 400)) {
     const batch = writeBatch(db);
     group.forEach((d) => batch.delete(d.ref));
@@ -46,10 +49,10 @@ async function clearCollection(collectionName) {
   }
 }
 
-async function putAll(collectionName, records, idField) {
+async function putAll(householdId, collectionName, records, idField) {
   for (const group of chunk(records, 400)) {
     const batch = writeBatch(db);
-    group.forEach((rec) => batch.set(householdDoc(collectionName, rec[idField]), rec));
+    group.forEach((rec) => batch.set(householdDoc(householdId, collectionName, rec[idField]), rec));
     await batch.commit();
   }
 }
@@ -64,65 +67,65 @@ export const DEFAULT_SETTINGS = {
 };
 
 export async function getSettings() {
-  const snap = await getDoc(householdDoc("settings", "settings"));
+  const snap = await getDoc(householdDoc(myHouseholdId(), "settings", "settings"));
   return snap.exists() ? snap.data() : { ...DEFAULT_SETTINGS };
 }
 
 export async function saveSettings(settings) {
-  await setDoc(householdDoc("settings", "settings"), { ...settings, id: "settings" });
+  await setDoc(householdDoc(myHouseholdId(), "settings", "settings"), { ...settings, id: "settings" });
 }
 
 export async function getAllCheckins() {
-  return getAllDocs("checkins");
+  return getAllDocs(myHouseholdId(), "checkins");
 }
 
 export async function getCheckin(date) {
-  const snap = await getDoc(householdDoc("checkins", date));
+  const snap = await getDoc(householdDoc(myHouseholdId(), "checkins", date));
   return snap.exists() ? snap.data() : undefined;
 }
 
 export async function saveCheckin(record) {
-  await setDoc(householdDoc("checkins", record.date), record);
+  await setDoc(householdDoc(myHouseholdId(), "checkins", record.date), record);
 }
 
 export async function getAllPrizeAwards() {
-  return getAllDocs("prizeAwards");
+  return getAllDocs(myHouseholdId(), "prizeAwards");
 }
 
 export async function savePrizeAward(award) {
-  await setDoc(householdDoc("prizeAwards", award.date), award);
+  await setDoc(householdDoc(myHouseholdId(), "prizeAwards", award.date), award);
 }
 
 export async function deletePrizeAward(date) {
-  await deleteDoc(householdDoc("prizeAwards", date));
+  await deleteDoc(householdDoc(myHouseholdId(), "prizeAwards", date));
 }
 
 export async function getAllShifts() {
-  return getAllDocs("shifts");
+  return getAllDocs(myHouseholdId(), "shifts");
 }
 
 export async function getShift(date) {
-  const snap = await getDoc(householdDoc("shifts", date));
+  const snap = await getDoc(householdDoc(myHouseholdId(), "shifts", date));
   return snap.exists() ? snap.data() : undefined;
 }
 
 export async function saveShift(shift) {
-  await setDoc(householdDoc("shifts", shift.date), shift);
+  await setDoc(householdDoc(myHouseholdId(), "shifts", shift.date), shift);
 }
 
 export async function deleteShift(date) {
-  await deleteDoc(householdDoc("shifts", date));
+  await deleteDoc(householdDoc(myHouseholdId(), "shifts", date));
 }
 
 export async function getStreakState() {
-  const snap = await getDoc(householdDoc("meta", "streakState"));
+  const snap = await getDoc(householdDoc(myHouseholdId(), "meta", "streakState"));
   return snap.exists()
     ? snap.data()
     : { id: "streakState", currentStreak: 0, longestStreak: 0, lastComputedForDate: null };
 }
 
 export async function saveStreakState(state) {
-  await setDoc(householdDoc("meta", "streakState"), { ...state, id: "streakState" });
+  await setDoc(householdDoc(myHouseholdId(), "meta", "streakState"), { ...state, id: "streakState" });
 }
 
 export async function exportAllData() {
@@ -145,31 +148,34 @@ export async function exportAllData() {
 }
 
 export async function importAllData(data) {
-  await setDoc(householdDoc("settings", "settings"), { ...data.settings, id: "settings" });
+  const householdId = myHouseholdId();
+  await setDoc(householdDoc(householdId, "settings", "settings"), { ...data.settings, id: "settings" });
 
-  await clearCollection("checkins");
-  await putAll("checkins", data.checkins || [], "date");
+  await clearCollection(householdId, "checkins");
+  await putAll(householdId, "checkins", data.checkins || [], "date");
 
-  await clearCollection("prizeAwards");
-  await putAll("prizeAwards", data.prizeAwards || [], "date");
+  await clearCollection(householdId, "prizeAwards");
+  await putAll(householdId, "prizeAwards", data.prizeAwards || [], "date");
 
-  await clearCollection("shifts");
-  await putAll("shifts", data.shifts || [], "date");
+  await clearCollection(householdId, "shifts");
+  await putAll(householdId, "shifts", data.shifts || [], "date");
 
-  await setDoc(householdDoc("meta", "streakState"), { ...(data.streakState || {}), id: "streakState" });
+  await setDoc(householdDoc(householdId, "meta", "streakState"), { ...(data.streakState || {}), id: "streakState" });
 }
 
 export async function resetAllData() {
-  await deleteDoc(householdDoc("settings", "settings"));
-  await deleteDoc(householdDoc("meta", "streakState"));
-  await clearCollection("checkins");
-  await clearCollection("prizeAwards");
-  await clearCollection("shifts");
+  const householdId = myHouseholdId();
+  await deleteDoc(householdDoc(householdId, "settings", "settings"));
+  await deleteDoc(householdDoc(householdId, "meta", "streakState"));
+  await clearCollection(householdId, "checkins");
+  await clearCollection(householdId, "prizeAwards");
+  await clearCollection(householdId, "shifts");
 }
 
 // --- Guest invite links (read + comment only, no login) ---
 // invites/{inviteId} docs are created by hand in the Firebase console (see
-// README) — there's no in-app "create invite" UI yet.
+// README) — there's no in-app "create invite" UI yet. Each invite names
+// which admin's household (by uid, in its ownerId field) it grants access to.
 
 export async function getInvite(inviteId) {
   const snap = await getDoc(doc(db, "invites", inviteId));
@@ -181,21 +187,28 @@ export async function getGuestGrant(uid) {
   return snap.exists() ? snap.data() : null;
 }
 
-export async function redeemInvite(inviteId, uid, label) {
+export async function redeemInvite(inviteId, uid, label, householdId) {
   await setDoc(doc(db, "guestGrants", uid), {
     invite: inviteId,
+    householdId,
     label: label || "",
     grantedAt: new Date().toISOString(),
   });
 }
 
-export async function getAllComments() {
-  const snap = await getDocs(householdCollection("comments"));
+// --- Guest-facing reads: an explicit household, not "my own" ---
+
+export async function getPrizeAwardsForHousehold(householdId) {
+  return getAllDocs(householdId, "prizeAwards");
+}
+
+export async function getCommentsForHousehold(householdId) {
+  const snap = await getDocs(householdCollection(householdId, "comments"));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function addComment({ prizeAwardDate, authorUid, authorLabel, text }) {
-  await addDoc(householdCollection("comments"), {
+export async function addCommentToHousehold({ householdId, prizeAwardDate, authorUid, authorLabel, text }) {
+  await addDoc(householdCollection(householdId, "comments"), {
     prizeAwardDate,
     authorUid,
     authorLabel,
