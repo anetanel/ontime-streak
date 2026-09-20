@@ -2,11 +2,17 @@ import { saveSettings, resetAllData } from "./db.js";
 import { App, refreshAll, checkForUpdatesNow } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
 import { APP_VERSION } from "./version.js";
+import { auth, signOutUser } from "./firebase-init.js";
 
 let els = {};
 let saveTimer = null;
 
 export function initSettings() {
+  els.accountPhoto = document.getElementById("account-photo");
+  els.accountPhotoPlaceholder = document.getElementById("account-photo-placeholder");
+  els.accountName = document.getElementById("account-name");
+  els.accountEmail = document.getElementById("account-email");
+  els.accountSignoutBtn = document.getElementById("account-signout-btn");
   els.grace = document.getElementById("set-grace");
   els.sound = document.getElementById("set-sound");
   els.banner = document.getElementById("backup-banner");
@@ -19,6 +25,9 @@ export function initSettings() {
   els.version.textContent = APP_VERSION;
   els.checkUpdateBtn = document.getElementById("check-update-btn");
   els.checkUpdateStatus = document.getElementById("check-update-status");
+
+  renderAccount();
+  els.accountSignoutBtn.addEventListener("click", () => signOutUser());
 
   els.grace.addEventListener("change", debounceSaveSettings);
   els.sound.addEventListener("change", debounceSaveSettings);
@@ -43,6 +52,27 @@ async function handleCheckForUpdates() {
     return;
   }
   els.checkUpdateStatus.textContent = `האפליקציה כבר מעודכנת (גרסה ${APP_VERSION}).`;
+}
+
+function renderAccount() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  els.accountName.textContent = user.displayName || user.email || "";
+  els.accountEmail.textContent = user.displayName ? user.email : "";
+
+  if (user.photoURL) {
+    els.accountPhoto.src = user.photoURL;
+    els.accountPhoto.style.display = "block";
+    els.accountPhotoPlaceholder.style.display = "none";
+    els.accountPhoto.onerror = () => {
+      els.accountPhoto.style.display = "none";
+      els.accountPhotoPlaceholder.style.display = "flex";
+    };
+  } else {
+    els.accountPhoto.style.display = "none";
+    els.accountPhotoPlaceholder.style.display = "flex";
+  }
 }
 
 function debounceSaveSettings() {
