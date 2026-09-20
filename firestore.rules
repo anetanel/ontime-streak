@@ -1,8 +1,8 @@
 rules_version = '2';
 
-// Paste this into Firebase Console → Firestore Database → Rules whenever it
-// changes — there's no CLI/npm in this project's toolchain, so this file is
-// the source of truth but isn't auto-deployed.
+// Source of truth for the project's Firestore rules. Deploy changes with:
+//   firebase deploy --only firestore:rules
+// (Firebase CLI is installed standalone — see README's Firebase section.)
 service cloud.firestore {
   match /databases/{database}/documents {
     function isAdmin() {
