@@ -1,48 +1,57 @@
-const DB_NAME = "ontimeStreakDB";
-const DB_VERSION = 3;
+import { db } from "./firebase-init.js";
+import {
+  doc,
+  getDoc,
+  setDoc,
+  deleteDoc,
+  collection,
+  getDocs,
+  addDoc,
+  writeBatch,
+} from "./vendor/firebase-firestore.js";
 
-let dbPromise = null;
+const DATA_VERSION = 4; // bumped from 3 (IndexedDB) with the move to Firestore
 
-function openDB() {
-  if (dbPromise) return dbPromise;
-  dbPromise = new Promise((resolve, reject) => {
-    const req = indexedDB.open(DB_NAME, DB_VERSION);
-    req.onupgradeneeded = () => {
-      const db = req.result;
-      if (!db.objectStoreNames.contains("settings")) {
-        db.createObjectStore("settings", { keyPath: "id" });
-      }
-      if (!db.objectStoreNames.contains("checkins")) {
-        db.createObjectStore("checkins", { keyPath: "date" });
-      }
-      if (db.objectStoreNames.contains("rewards")) {
-        db.deleteObjectStore("rewards");
-      }
-      if (!db.objectStoreNames.contains("prizeAwards")) {
-        db.createObjectStore("prizeAwards", { keyPath: "date" });
-      }
-      if (!db.objectStoreNames.contains("meta")) {
-        db.createObjectStore("meta", { keyPath: "id" });
-      }
-      if (!db.objectStoreNames.contains("shifts")) {
-        db.createObjectStore("shifts", { keyPath: "date" });
-      }
-    };
-    req.onsuccess = () => resolve(req.result);
-    req.onerror = () => reject(req.error);
-  });
-  return dbPromise;
+// One shared household — access is controlled by Google account email via
+// firestore.rules (see the isAdmin() check there), not by this path.
+const ROOT = ["household", "main"];
+
+function householdDoc(...segments) {
+  return doc(db, ...ROOT, ...segments);
 }
 
-function tx(storeName, mode) {
-  return openDB().then((db) => db.transaction(storeName, mode).objectStore(storeName));
+function householdCollection(name) {
+  return collection(db, ...ROOT, name);
 }
 
-function wrap(request) {
-  return new Promise((resolve, reject) => {
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
+async function getAllDocs(collectionName) {
+  const snap = await getDocs(householdCollection(collectionName));
+  return snap.docs.map((d) => d.data());
+}
+
+// Firestore batches cap at 500 writes; personal shift/checkin history can
+// exceed that after a couple of years, so writes here are chunked.
+function chunk(arr, size) {
+  const out = [];
+  for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
+  return out;
+}
+
+async function clearCollection(collectionName) {
+  const snap = await getDocs(householdCollection(collectionName));
+  for (const group of chunk(snap.docs, 400)) {
+    const batch = writeBatch(db);
+    group.forEach((d) => batch.delete(d.ref));
+    await batch.commit();
+  }
+}
+
+async function putAll(collectionName, records, idField) {
+  for (const group of chunk(records, 400)) {
+    const batch = writeBatch(db);
+    group.forEach((rec) => batch.set(householdDoc(collectionName, rec[idField]), rec));
+    await batch.commit();
+  }
 }
 
 export const DEFAULT_SETTINGS = {
@@ -55,75 +64,65 @@ export const DEFAULT_SETTINGS = {
 };
 
 export async function getSettings() {
-  const store = await tx("settings", "readonly");
-  const result = await wrap(store.get("settings"));
-  return result || { ...DEFAULT_SETTINGS };
+  const snap = await getDoc(householdDoc("settings", "settings"));
+  return snap.exists() ? snap.data() : { ...DEFAULT_SETTINGS };
 }
 
 export async function saveSettings(settings) {
-  const store = await tx("settings", "readwrite");
-  await wrap(store.put({ ...settings, id: "settings" }));
+  await setDoc(householdDoc("settings", "settings"), { ...settings, id: "settings" });
 }
 
 export async function getAllCheckins() {
-  const store = await tx("checkins", "readonly");
-  return wrap(store.getAll());
+  return getAllDocs("checkins");
 }
 
 export async function getCheckin(date) {
-  const store = await tx("checkins", "readonly");
-  return wrap(store.get(date));
+  const snap = await getDoc(householdDoc("checkins", date));
+  return snap.exists() ? snap.data() : undefined;
 }
 
 export async function saveCheckin(record) {
-  const store = await tx("checkins", "readwrite");
-  await wrap(store.put(record));
+  await setDoc(householdDoc("checkins", record.date), record);
 }
 
 export async function getAllPrizeAwards() {
-  const store = await tx("prizeAwards", "readonly");
-  return wrap(store.getAll());
+  return getAllDocs("prizeAwards");
 }
 
 export async function savePrizeAward(award) {
-  const store = await tx("prizeAwards", "readwrite");
-  await wrap(store.put(award));
+  await setDoc(householdDoc("prizeAwards", award.date), award);
 }
 
 export async function deletePrizeAward(date) {
-  const store = await tx("prizeAwards", "readwrite");
-  await wrap(store.delete(date));
+  await deleteDoc(householdDoc("prizeAwards", date));
 }
 
 export async function getAllShifts() {
-  const store = await tx("shifts", "readonly");
-  return wrap(store.getAll());
+  return getAllDocs("shifts");
 }
 
 export async function getShift(date) {
-  const store = await tx("shifts", "readonly");
-  return wrap(store.get(date));
+  const snap = await getDoc(householdDoc("shifts", date));
+  return snap.exists() ? snap.data() : undefined;
 }
 
 export async function saveShift(shift) {
-  const store = await tx("shifts", "readwrite");
-  await wrap(store.put(shift));
+  await setDoc(householdDoc("shifts", shift.date), shift);
 }
 
 export async function deleteShift(date) {
-  const store = await tx("shifts", "readwrite");
-  await wrap(store.delete(date));
+  await deleteDoc(householdDoc("shifts", date));
 }
 
 export async function getStreakState() {
-  const store = await tx("meta", "readonly");
-  const result = await wrap(store.get("streakState"));
-  return result || { id: "streakState", currentStreak: 0, longestStreak: 0, lastComputedForDate: null };
+  const snap = await getDoc(householdDoc("meta", "streakState"));
+  return snap.exists()
+    ? snap.data()
+    : { id: "streakState", currentStreak: 0, longestStreak: 0, lastComputedForDate: null };
 }
 
 export async function saveStreakState(state) {
-  const store = await tx("meta", "readwrite");
-  await wrap(store.put({ ...state, id: "streakState" }));
+  await setDoc(householdDoc("meta", "streakState"), { ...state, id: "streakState" });
 }
 
 export async function exportAllData() {
@@ -136,7 +135,7 @@ export async function exportAllData() {
   ]);
   return {
     exportedAt: new Date().toISOString(),
-    version: DB_VERSION,
+    version: DATA_VERSION,
     settings,
     checkins,
     prizeAwards,
@@ -146,35 +145,61 @@ export async function exportAllData() {
 }
 
 export async function importAllData(data) {
-  const settingsStore = await tx("settings", "readwrite");
-  await wrap(settingsStore.put({ ...data.settings, id: "settings" }));
+  await setDoc(householdDoc("settings", "settings"), { ...data.settings, id: "settings" });
 
-  const checkinsStore = await tx("checkins", "readwrite");
-  await wrap(checkinsStore.clear());
-  for (const rec of data.checkins || []) {
-    await wrap(checkinsStore.put(rec));
-  }
+  await clearCollection("checkins");
+  await putAll("checkins", data.checkins || [], "date");
 
-  const prizeAwardsStore = await tx("prizeAwards", "readwrite");
-  await wrap(prizeAwardsStore.clear());
-  for (const rec of data.prizeAwards || []) {
-    await wrap(prizeAwardsStore.put(rec));
-  }
+  await clearCollection("prizeAwards");
+  await putAll("prizeAwards", data.prizeAwards || [], "date");
 
-  const shiftsStore = await tx("shifts", "readwrite");
-  await wrap(shiftsStore.clear());
-  for (const rec of data.shifts || []) {
-    await wrap(shiftsStore.put(rec));
-  }
+  await clearCollection("shifts");
+  await putAll("shifts", data.shifts || [], "date");
 
-  const metaStore = await tx("meta", "readwrite");
-  await wrap(metaStore.put({ ...(data.streakState || {}), id: "streakState" }));
+  await setDoc(householdDoc("meta", "streakState"), { ...(data.streakState || {}), id: "streakState" });
 }
 
 export async function resetAllData() {
-  const stores = ["settings", "checkins", "prizeAwards", "shifts", "meta"];
-  for (const name of stores) {
-    const store = await tx(name, "readwrite");
-    await wrap(store.clear());
-  }
+  await deleteDoc(householdDoc("settings", "settings"));
+  await deleteDoc(householdDoc("meta", "streakState"));
+  await clearCollection("checkins");
+  await clearCollection("prizeAwards");
+  await clearCollection("shifts");
+}
+
+// --- Guest invite links (read + comment only, no login) ---
+// invites/{inviteId} docs are created by hand in the Firebase console (see
+// README) — there's no in-app "create invite" UI yet.
+
+export async function getInvite(inviteId) {
+  const snap = await getDoc(doc(db, "invites", inviteId));
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function getGuestGrant(uid) {
+  const snap = await getDoc(doc(db, "guestGrants", uid));
+  return snap.exists() ? snap.data() : null;
+}
+
+export async function redeemInvite(inviteId, uid, label) {
+  await setDoc(doc(db, "guestGrants", uid), {
+    invite: inviteId,
+    label: label || "",
+    grantedAt: new Date().toISOString(),
+  });
+}
+
+export async function getAllComments() {
+  const snap = await getDocs(householdCollection("comments"));
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function addComment({ prizeAwardDate, authorUid, authorLabel, text }) {
+  await addDoc(householdCollection("comments"), {
+    prizeAwardDate,
+    authorUid,
+    authorLabel,
+    text,
+    createdAt: new Date().toISOString(),
+  });
 }

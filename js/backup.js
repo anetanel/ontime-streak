@@ -39,7 +39,7 @@ export function readBackupFile(file) {
     reader.onload = () => {
       try {
         const data = JSON.parse(reader.result);
-        if (!data.settings || !Array.isArray(data.checkins) || !Array.isArray(data.rewards)) {
+        if (!data.settings || !Array.isArray(data.checkins) || !Array.isArray(data.prizeAwards)) {
           reject(new Error("הקובץ הזה לא נראה כמו גיבוי תקין של האפליקציה."));
           return;
         }

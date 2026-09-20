@@ -1,0 +1,55 @@
+rules_version = '2';
+
+// Paste this into Firebase Console → Firestore Database → Rules whenever it
+// changes — there's no CLI/npm in this project's toolchain, so this file is
+// the source of truth but isn't auto-deployed.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null &&
+        request.auth.token.email in [
+          "netanel.attali@gmail.com",
+          "dovnemalim@gmail.com"
+        ];
+    }
+
+    function isGuest() {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/guestGrants/$(request.auth.uid));
+    }
+
+    // Admin-created invite links (see README for how to create one). A
+    // guest only needs to read the one they're redeeming; only admins
+    // create or deactivate them.
+    match /invites/{inviteId} {
+      allow read: if request.auth != null;
+      allow write: if isAdmin();
+    }
+
+    // A guest "claims" an invite once, by creating their own grant doc —
+    // this is what actually gates their access below. The create is only
+    // allowed if it references a real, still-active invite.
+    match /guestGrants/{uid} {
+      allow create: if request.auth != null && request.auth.uid == uid
+        && exists(/databases/$(database)/documents/invites/$(request.resource.data.invite))
+        && get(/databases/$(database)/documents/invites/$(request.resource.data.invite)).data.active == true;
+      allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
+      allow update, delete: if isAdmin();
+    }
+
+    // Guests only ever see achievements and comments — not her check-in
+    // history, shifts, or settings.
+    match /household/main/prizeAwards/{date} {
+      allow read: if isAdmin() || isGuest();
+    }
+
+    match /household/main/comments/{commentId} {
+      allow read: if isAdmin() || isGuest();
+      allow create: if isGuest() && request.resource.data.authorUid == request.auth.uid;
+    }
+
+    match /household/main/{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}

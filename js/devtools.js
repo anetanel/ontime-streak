@@ -1,5 +1,12 @@
 // Testing-only helpers, exposed as window.__test in the browser console.
 // Never used by the real app UI — she will never see or need these.
+//
+// DANGER: since Google Sign-In was added, there's no more per-browser data
+// isolation for admins — every admin-signed-in session (her phone, your
+// laptop, anywhere) reads/writes the exact same shared Firestore household.
+// Running these while signed in as an admin overwrites her real data.
+// Export a backup first (Settings → Export Backup) if there's anything
+// here worth keeping before running any of these.
 import { App, refreshAll } from "./app.js";
 import { formatLocalDate, getTierForStreak } from "./streak.js";
 import { saveCheckin, saveShift, resetAllData } from "./db.js";
@@ -92,7 +99,7 @@ async function reset() {
 
 window.__test = { setStreak, previewPrize, previewCelebration, previewAllCelebrations, reset };
 console.log(
-  "%cOn-Time Streak test tools (window.__test) — never run these on her real phone:",
+  "%cOn-Time Streak test tools (window.__test) — never run these while signed in as an admin against her real data:",
   "font-weight:bold",
   "\n  __test.setStreak(n)              wipes data and fakes an n-day streak ending yesterday",
   "\n  __test.previewPrize(n)           shows the reveal for whatever day n would award, without saving anything",

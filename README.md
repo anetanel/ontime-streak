@@ -55,6 +55,27 @@ If the manual check button itself is what's out of date (i.e. the icon is stuck 
 4. Only if that still doesn't work: have her tap **Export Backup** in Settings first, then **iPhone Settings → Safari → Advanced → Website Data**, find the site, delete its data (wipes the service worker/cache but also her on-device history — restore with **Import Backup** afterward).
 5. Last resort: restart the phone.
 
+### Firebase (data backend)
+
+As of v31, her data lives in Firestore instead of on-device IndexedDB, under one shared `household/main/...` tree. There's still no server *we* run: the app talks to Firebase's servers directly from the browser, same "no build step" static JS as everything else, just backed by a cloud database instead of a local one.
+
+- `js/firebase-config.js` holds the project's public identifiers (apiKey, projectId, etc.) — these aren't secrets, they just say which Firebase project to talk to — plus `ADMIN_EMAILS`, the two Google accounts allowed in as admins. Access control is entirely in `firestore.rules`, not in hiding this file.
+- `firestore.rules` (repo root) is the source of truth for security rules, but there's no CLI in this toolchain (no npm on this machine) to deploy it automatically — paste its contents into Firebase Console → Firestore Database → Rules by hand whenever it changes. **The repo copy and the console copy silently drift apart if you forget this step** — a rule change with no matching console paste fails closed (permission-denied on paths the new rule was supposed to allow), which is exactly what happened once already while building this.
+- The Firebase SDK itself is vendored as static files in `js/vendor/` (downloaded from `https://www.gstatic.com/firebasejs/<version>/`, with the cross-file import in `firebase-auth.js`/`firebase-firestore.js` patched from an absolute gstatic URL to a relative `./firebase-app.js` so it resolves to the local copy). This is what lets the service worker cache them like any other asset, so the app still works offline after the first successful load — to upgrade the SDK version, re-download those three files and re-apply that one-line patch to the two files that import `firebase-app.js`.
+
+**Admins (her + you).** Both sign in with Google — there's a sign-in screen now (`#auth-gate` in `index.html`, wired in `js/auth-gate.js`), shown to anyone who isn't one of the two `ADMIN_EMAILS`. Because it's a real Google account rather than a per-browser anonymous identity, her data now *does* carry over to a new phone automatically (sign in with the same Google account) — unlike the old IndexedDB version, "no cloud sync between devices" is no longer a real limitation for her. Sign-in uses a redirect (not a popup) because Firebase's own guidance is that popups are unreliable on mobile/standalone PWAs — **this hasn't yet been tested on her actual installed iPhone icon**, which is the one thing in this whole migration that genuinely can't be verified from a dev machine. Test that early, on her real Home Screen icon, before relying on it.
+
+**Guests (invite links, no login).** Someone she wants to share achievements with opens a link like `https://anetanel.github.io/ontime-streak/?invite=<id>` and is let in invisibly (anonymous Firebase auth under the hood) — they never see the Google sign-in screen. Guests can only read `prizeAwards` and post/read `comments`; they can't see her check-in history, shifts, or settings, and can't write anything except a comment. To invite someone:
+1. Firebase Console → **Firestore Database → Data** → **Start collection** (or add to it if it exists) → collection ID `invites`.
+2. **Auto-ID** for the document ID.
+3. Fields: `label` (string, e.g. `"Dana"` — this is what shows next to her comments) and `active` (boolean, `true`).
+4. Save, then copy that document's ID from the top of the page — the invite link is `https://anetanel.github.io/ontime-streak/?invite=<that id>`.
+5. To revoke later: flip `active` to `false` on that invite doc (existing guests who already redeemed it keep access via their own `guestGrants` doc — deleting *that* guest's `guestGrants/{uid}` doc, found by matching its `invite` field, is what actually cuts them off).
+
+There's no in-app UI for creating invites yet — this is a manual console step for now.
+
+**Testing note:** since both admins share the one real household, there is no separate "test data" — see the warning at the top of `js/devtools.js` before running any `window.__test` command.
+
 ### Local preview and testing (desktop)
 
 ```bash
@@ -82,12 +103,12 @@ __test.reset()                      // wipes all local data back to empty
 
 `previewCelebration`/`previewAllCelebrations` just call the real confetti engine directly — nothing is saved, so they're safe to run anytime, including on her real phone if you ever wanted to show her what a tier looks like without touching her data.
 
-These are destructive to whatever's in local storage — only run them against the local dev server or a throwaway browser profile, never against her real installed app.
+**These are destructive to the one real shared household if you're signed in as an admin when you run them** — there's no more per-browser test isolation now that admin access is a real Google account rather than an anonymous identity (see the Firebase section above). Export a backup first if there's anything worth keeping, and prefer testing signed out or on a throwaway Google account that isn't in `ADMIN_EMAILS` where the flow allows it.
 
 ## Known limitations
 
 - No reminder notifications — iOS Safari PWAs can't reliably send background push without a paid service. Use a regular iPhone alarm as the reminder to open the app.
-- No cloud sync between devices. Moving to a new phone requires Export Backup on the old one and Import Backup on the new one.
+- Moving to a new phone is now just signing in with the same Google account (data lives in Firestore, not on-device) — Export/Import Backup is a fallback, not the only path, the way it used to be.
 - Backfilling only works for a date that already has a shift entered for it — there's still no way to retroactively add both a shift and an arrival time for a day nothing was ever scheduled on.
 - Shifts need to be entered before the day happens — there's no automatic recurring pattern, since the work schedule is irregular. A shift added after the fact for a past date will still be picked up by the streak/history calculations, but won't retroactively help if a check-in was already missed.
 - Relies on the iPhone's system clock for on-time/late calculation.

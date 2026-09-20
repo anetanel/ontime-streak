@@ -15,7 +15,25 @@
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-<div id="app">
+
+<div id="auth-gate" class="auth-gate">
+  <div class="auth-card">
+    <div class="auth-logo">🔥</div>
+    <h1>רצף בזמן</h1>
+    <p id="auth-status" class="stat-label">מתחברת…</p>
+    <button id="google-signin-btn" class="btn btn-primary" style="display:none;">התחברות עם Google</button>
+    <button id="google-signout-btn" class="btn btn-secondary" style="display:none;">התנתקות</button>
+  </div>
+</div>
+
+<div id="guest-view" class="hidden">
+  <div class="guest-screen">
+    <h1 class="topbar">פרסים של רצף בזמן</h1>
+    <div id="guest-prizes-list"></div>
+  </div>
+</div>
+
+<div id="app" class="hidden">
 
   <section id="screen-home" class="screen active">
     <h1 class="topbar">רצף בזמן</h1>

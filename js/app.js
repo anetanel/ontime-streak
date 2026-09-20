@@ -5,6 +5,8 @@ import { initHome, renderHome } from "./ui-home.js";
 import { initHistory, renderHistory } from "./ui-history.js";
 import { initPrizes, renderPrizes } from "./ui-prizes.js";
 import { initSettings, renderSettings } from "./ui-settings.js";
+import { initAuthGate } from "./auth-gate.js";
+import { renderGuestView } from "./guest-view.js";
 import "./devtools.js";
 
 export const App = {
@@ -150,16 +152,20 @@ export async function checkForUpdatesNow() {
   return swRegistration;
 }
 
-async function boot() {
-  setupTabs();
-  pinTabbarToVisualViewport();
-  registerServiceWorker();
+async function bootApp() {
   App.prizeManifest = await loadPrizeManifest();
   initHome();
   initHistory();
   initPrizes();
   initSettings();
   await refreshAll();
+}
+
+function boot() {
+  setupTabs();
+  pinTabbarToVisualViewport();
+  registerServiceWorker();
+  initAuthGate({ onAdmin: bootApp, onGuest: renderGuestView });
 }
 
 boot();

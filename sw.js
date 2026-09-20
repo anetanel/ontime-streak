@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v30";
+const CACHE_NAME = "ontime-streak-v31";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,6 +6,13 @@ const ASSETS = [
   "./manifest.json",
   "./js/app.js",
   "./js/db.js",
+  "./js/auth-gate.js",
+  "./js/guest-view.js",
+  "./js/firebase-init.js",
+  "./js/firebase-config.js",
+  "./js/vendor/firebase-app.js",
+  "./js/vendor/firebase-auth.js",
+  "./js/vendor/firebase-firestore.js",
   "./js/streak.js",
   "./js/confetti.js",
   "./js/backup.js",
