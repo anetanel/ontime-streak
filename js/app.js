@@ -5,6 +5,7 @@ import { initHome, renderHome } from "./ui-home.js";
 import { initHistory, renderHistory } from "./ui-history.js";
 import { initPrizes, renderPrizes } from "./ui-prizes.js";
 import { initSettings, renderSettings } from "./ui-settings.js";
+import { initInvites } from "./ui-invites.js";
 import { initAuthGate } from "./auth-gate.js";
 import { renderGuestView } from "./guest-view.js";
 import "./devtools.js";
@@ -158,6 +159,7 @@ async function bootApp() {
   initHistory();
   initPrizes();
   initSettings();
+  initInvites();
   await refreshAll();
 }
 

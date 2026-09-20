@@ -7,6 +7,9 @@ import {
   collection,
   getDocs,
   addDoc,
+  updateDoc,
+  query,
+  where,
   writeBatch,
 } from "./vendor/firebase-firestore.js";
 
@@ -215,4 +218,30 @@ export async function addCommentToHousehold({ householdId, prizeAwardDate, autho
     text,
     createdAt: new Date().toISOString(),
   });
+}
+
+// --- Invite management (admin-facing, for the "Manage Invites" screen) ---
+
+export async function getMyInvites() {
+  const q = query(collection(db, "invites"), where("ownerId", "==", myHouseholdId()));
+  const snap = await getDocs(q);
+  return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+}
+
+export async function createInvite(label) {
+  const ref = await addDoc(collection(db, "invites"), {
+    label: label || "",
+    active: true,
+    ownerId: myHouseholdId(),
+    createdAt: new Date().toISOString(),
+  });
+  return ref.id;
+}
+
+export async function setInviteActive(inviteId, active) {
+  await updateDoc(doc(db, "invites", inviteId), { active });
+}
+
+export async function deleteInvite(inviteId) {
+  await deleteDoc(doc(db, "invites", inviteId));
 }

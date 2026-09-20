@@ -170,6 +170,12 @@
     </div>
 
     <div class="card">
+      <h3>הזמנות אורחים</h3>
+      <div class="stat-label" style="margin-bottom:10px;">כל מי שמקבל קישור הזמנה יכול לראות את הפרסים שלך ולהגיב עליהם, בלי להתחבר.</div>
+      <button class="btn btn-secondary" id="manage-invites-btn">ניהול הזמנות</button>
+    </div>
+
+    <div class="card">
       <h3>גיבוי</h3>
       <div id="backup-banner" class="banner" style="display:none;"></div>
       <button class="btn btn-secondary" id="export-btn">ייצוא גיבוי</button>
@@ -261,6 +267,20 @@
     <button class="btn btn-secondary" id="late-reason-unforeseen">נסיבות מיוחדות</button>
     <button class="btn btn-secondary" id="late-reason-enter-time">הגעתי בזמן, רק לחצתי מאוחר — הזנת שעת הגעה בפועל</button>
     <button class="btn btn-secondary" id="late-reason-cancel">ביטול</button>
+  </div>
+</div>
+
+<div id="invites-modal" class="modal-backdrop hidden">
+  <div class="modal-sheet">
+    <h2>הזמנות אורחים</h2>
+    <div class="field">
+      <label for="invite-label-input">שם האורחת/האורח</label>
+      <input type="text" id="invite-label-input" placeholder="לדוגמה: דנה" maxlength="60">
+    </div>
+    <button class="btn btn-primary" id="invite-create-btn">יצירת הזמנה</button>
+    <div id="invites-list"></div>
+    <div id="invites-empty" class="empty-hint" style="display:none;">עוד אין הזמנות.</div>
+    <button class="btn btn-secondary" id="invites-close-btn">סגירה</button>
   </div>
 </div>
 
