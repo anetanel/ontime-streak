@@ -2,8 +2,7 @@ import { initializeApp } from "./vendor/firebase-app.js";
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signInAnonymously,
   signOut,
 } from "./vendor/firebase-auth.js";
@@ -22,13 +21,17 @@ export const db = initializeFirestore(app, {
 
 const googleProvider = new GoogleAuthProvider();
 
-// A redirect (not a popup) is Firebase's own recommended flow for mobile —
-// popups depend on window.open + postMessage back to an opener, which
-// doesn't reliably exist inside an installed iOS Home Screen PWA. This
-// navigates away to Google and back; getRedirectResult below picks up
-// the result once the app reloads.
+// signInWithRedirect was tried first (it's Firebase's usual recommendation
+// for mobile), but its redirect-result handshake relies on a hidden iframe
+// on the authDomain talking back via postMessage — a third-party context
+// that Safari's Intelligent Tracking Prevention silently blocks from
+// storage access, breaking it with no catchable error, in both regular
+// Safari and an installed Home Screen PWA (confirmed in the field on both).
+// A popup is a real top-level window, not a third-party iframe, so it
+// doesn't hit that restriction — and since it's opened directly from a
+// button tap (a real user gesture), Safari won't block it as a popup.
 export function signInWithGoogle() {
-  return signInWithRedirect(auth, googleProvider);
+  return signInWithPopup(auth, googleProvider);
 }
 
 export function signOutUser() {
@@ -41,7 +44,3 @@ export function signOutUser() {
 export function signInAsGuest() {
   return signInAnonymously(auth);
 }
-
-getRedirectResult(auth).catch((err) => {
-  console.error("Google sign-in redirect failed:", err);
-});
