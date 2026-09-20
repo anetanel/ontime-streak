@@ -229,10 +229,13 @@ export async function getMyInvites() {
 }
 
 export async function createInvite(label) {
+  const owner = auth.currentUser;
   const ref = await addDoc(collection(db, "invites"), {
     label: label || "",
     active: true,
     ownerId: myHouseholdId(),
+    ownerName: owner.displayName || owner.email || "",
+    ownerPhotoURL: owner.photoURL || null,
     createdAt: new Date().toISOString(),
   });
   return ref.id;

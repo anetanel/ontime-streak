@@ -1,5 +1,5 @@
-import { auth } from "./firebase-init.js";
-import { getPrizeAwardsForHousehold, getCommentsForHousehold, addCommentToHousehold } from "./db.js";
+import { auth, signOutUser } from "./firebase-init.js";
+import { getPrizeAwardsForHousehold, getCommentsForHousehold, addCommentToHousehold, getInvite } from "./db.js";
 import { getTierByKey } from "./prizes.js";
 
 let currentGrant = null;
@@ -8,7 +8,39 @@ let listEl = null;
 export async function renderGuestView(grant) {
   currentGrant = grant;
   listEl = listEl || document.getElementById("guest-prizes-list");
+
+  await renderHeader();
   await refresh();
+}
+
+async function renderHeader() {
+  const photo = document.getElementById("guest-owner-photo");
+  const photoPlaceholder = document.getElementById("guest-owner-photo-placeholder");
+  const ownerNameEl = document.getElementById("guest-owner-name");
+  const viewerLabelEl = document.getElementById("guest-viewer-label");
+  const signoutBtn = document.getElementById("guest-signout-btn");
+
+  viewerLabelEl.textContent = currentGrant.label ? `מחוברת בתור ${currentGrant.label}` : "";
+  signoutBtn.onclick = () => signOutUser();
+
+  const invite = await getInvite(currentGrant.invite).catch(() => null);
+  const ownerName = invite && invite.ownerName;
+  const ownerPhotoURL = invite && invite.ownerPhotoURL;
+
+  ownerNameEl.textContent = ownerName || "";
+
+  if (ownerPhotoURL) {
+    photo.src = ownerPhotoURL;
+    photo.style.display = "block";
+    photoPlaceholder.style.display = "none";
+    photo.onerror = () => {
+      photo.style.display = "none";
+      photoPlaceholder.style.display = "flex";
+    };
+  } else {
+    photo.style.display = "none";
+    photoPlaceholder.style.display = "flex";
+  }
 }
 
 async function refresh() {
