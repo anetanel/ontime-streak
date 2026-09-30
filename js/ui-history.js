@@ -55,8 +55,6 @@ export function initHistory() {
   });
 
   els.calNext.addEventListener("click", () => {
-    const now = new Date();
-    if (state.calYear === now.getFullYear() && state.calMonth === now.getMonth()) return;
     state.calMonth += 1;
     if (state.calMonth > 11) { state.calMonth = 0; state.calYear += 1; }
     renderHome_lastApp && renderCalendar(renderHome_lastApp);
@@ -165,7 +163,6 @@ function renderCalendar(app) {
 
   const now = new Date();
   const isCurrentMonth = calYear === now.getFullYear() && calMonth === now.getMonth();
-  els.calNext.style.visibility = isCurrentMonth ? "hidden" : "visible";
   els.calTodayRow.style.display = isCurrentMonth ? "none" : "block";
 
   const firstDow = monthDate.getDay();
