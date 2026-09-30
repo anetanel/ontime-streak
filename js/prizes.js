@@ -21,14 +21,14 @@ export function streakPeriodLabel(streakDay) {
   return streakDay === 180 ? "חצי שנה רצופה" : `${streakDay} ימים רצופים`;
 }
 
-// The milestone rule that triggered an award, e.g. day 63 -> "פרס על כל 3 ימים רצופים".
-// When several intervals in the tier divide the day, the smallest is stated,
+// The milestone rule that triggered an award, e.g. day 63 -> "פרס על כל 7 ימים רצופים".
+// When several intervals in the tier divide the day, the largest is stated (21 -> 7),
 // except 180 which is always stated as the half-year milestone.
 export function streakRuleLabel(streakDay) {
   const tier = findMatchingTier(streakDay);
   if (!tier) return "";
   if (streakDay % 180 === 0) return "פרס על כל חצי שנה רצופה";
-  const n = Math.min(...tier.intervalDays.filter((d) => streakDay % d === 0));
+  const n = Math.max(...tier.intervalDays.filter((d) => streakDay % d === 0));
   return `פרס על כל ${n} ימים רצופים`;
 }
 

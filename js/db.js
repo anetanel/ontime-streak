@@ -103,6 +103,10 @@ export async function saveCheckin(record) {
   await setDoc(householdDoc(myHouseholdId(), "checkins", record.date), record);
 }
 
+export async function deleteCheckin(date) {
+  await deleteDoc(householdDoc(myHouseholdId(), "checkins", date));
+}
+
 export async function getAllPrizeAwards() {
   return getAllDocs(myHouseholdId(), "prizeAwards");
 }
