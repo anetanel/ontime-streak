@@ -30,7 +30,13 @@
 
 html, body {
   overscroll-behavior: none;
-  overflow-x: hidden;
+}
+
+/* The page itself never scrolls: each .screen scrolls inside #app and the tab
+   bar is a non-scrolling flex sibling, so it stays put in every browser. */
+html, body {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
@@ -45,7 +51,7 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  min-height: 100dvh;
+  height: 100dvh;
 }
 
 #app.hidden { display: none; }
@@ -87,7 +93,8 @@ body {
 
 .guest-screen {
   padding: calc(var(--safe-top) + 14px) 16px calc(20px + var(--safe-bottom));
-  min-height: 100dvh;
+  height: 100dvh;
+  overflow-y: auto;
 }
 
 .comments-list {
@@ -214,8 +221,12 @@ body {
 
 .screen {
   flex: 1;
-  padding: calc(var(--safe-top) + 14px) 16px calc(76px + var(--safe-bottom));
+  min-height: 0;
+  padding: calc(var(--safe-top) + 14px) 16px 20px;
   display: none;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .screen.active { display: block; }
@@ -340,10 +351,7 @@ body {
 .reward-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
 
 .tabbar {
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  flex: none;
   display: flex;
   background: var(--tab-bg);
   backdrop-filter: blur(20px);
@@ -351,7 +359,6 @@ body {
   border-top: 1px solid var(--border);
   padding-bottom: var(--safe-bottom);
   z-index: 40;
-  will-change: transform;
 }
 
 .tabbar button {
@@ -389,6 +396,20 @@ body {
   width: 100%;
   min-width: 0;
   max-width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 17px;
+}
+
+.dev-input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  margin-bottom: 10px;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid var(--border);

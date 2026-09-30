@@ -213,6 +213,27 @@
       <button class="btn btn-danger" id="reset-btn">איפוס כל הנתונים</button>
     </div>
 
+    <div class="card" id="dev-card" style="display:none;">
+      <h3>מפתחים</h3>
+      <div class="stat-label" style="margin-bottom:10px;">כלי בדיקה. פעולות שמשנות נתונים פועלות על החשבון המחובר כרגע.</div>
+      <input type="number" id="dev-n" class="dev-input" min="0" value="3" inputmode="numeric" aria-label="מספר ימי רצף">
+      <button class="btn btn-secondary" data-dev="setStreak">setStreak(n) — מוחק נתונים</button>
+      <button class="btn btn-secondary" data-dev="extendStreak">extendStreak(n)</button>
+      <button class="btn btn-secondary" data-dev="previewPrize">previewPrize(n)</button>
+      <button class="btn btn-secondary" data-dev="previewCelebration">previewCelebration(n)</button>
+      <select id="dev-tier" class="dev-input" aria-label="דרגת חגיגה">
+        <option value="small">small</option>
+        <option value="medium">medium</option>
+        <option value="large">large</option>
+        <option value="xlarge">xlarge</option>
+        <option value="max">max</option>
+      </select>
+      <button class="btn btn-secondary" data-dev="previewCelebrationTier">previewCelebration(tier)</button>
+      <button class="btn btn-secondary" data-dev="previewAllCelebrations">previewAllCelebrations()</button>
+      <button class="btn btn-danger" data-dev="reset">reset() — מוחק נתונים</button>
+      <button class="btn btn-secondary" id="dev-hide-btn">הסתרת מצב מפתחים</button>
+    </div>
+
     <div class="card" style="text-align:center;">
       <div class="stat-label">גרסה <span id="app-version"></span></div>
       <button class="btn btn-secondary" id="check-update-btn" style="margin-top:10px;">בדיקת עדכון</button>

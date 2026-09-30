@@ -86,31 +86,9 @@ function setupTabs() {
       btn.classList.add("active");
       document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
       document.getElementById(`screen-${btn.dataset.screen}`).classList.add("active");
-      window.scrollTo(0, 0);
+      document.getElementById(`screen-${btn.dataset.screen}`).scrollTop = 0;
     });
   });
-}
-
-// iOS Safari can paint a position:fixed element at the post-scroll
-// visual-viewport position while its hit-testing box stays at the
-// stale layout-viewport position (e.g. while its dynamic toolbar is
-// collapsing). Actively syncing the tab bar to visualViewport, per
-// Apple's own recommended pattern for this, keeps both in agreement.
-function pinTabbarToVisualViewport() {
-  const tabbar = document.querySelector(".tabbar");
-  if (!tabbar || !window.visualViewport) return;
-
-  const update = () => {
-    const vv = window.visualViewport;
-    const layoutHeight = document.documentElement.clientHeight;
-    const visualBottom = vv.offsetTop + vv.height;
-    const delta = Math.max(0, layoutHeight - visualBottom);
-    tabbar.style.transform = delta > 0.5 ? `translateY(-${delta}px)` : "";
-  };
-
-  window.visualViewport.addEventListener("resize", update);
-  window.visualViewport.addEventListener("scroll", update);
-  update();
 }
 
 let swRegistration = null;
@@ -178,7 +156,6 @@ async function bootApp() {
 
 function boot() {
   setupTabs();
-  pinTabbarToVisualViewport();
   registerServiceWorker();
   initAuthGate({
     onAdmin: bootApp,

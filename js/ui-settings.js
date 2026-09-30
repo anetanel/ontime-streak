@@ -35,6 +35,60 @@ export function initSettings() {
   els.importFile.addEventListener("change", handleImport);
   els.resetBtn.addEventListener("click", handleReset);
   els.checkUpdateBtn.addEventListener("click", handleCheckForUpdates);
+
+  initDeveloperMode();
+}
+
+// Hidden developer mode: 10 taps in a row on the account icon reveal a card
+// with a button per window.__test helper. Taps more than 2s apart restart the count.
+const DEV_KEY = "devMode";
+const DEV_TAPS = 10;
+const DEV_TAP_GAP_MS = 2000;
+
+function devModeOn() {
+  try { return localStorage.getItem(DEV_KEY) === "1"; } catch { return false; }
+}
+
+function setDevMode(on) {
+  try { on ? localStorage.setItem(DEV_KEY, "1") : localStorage.removeItem(DEV_KEY); } catch {}
+  document.getElementById("dev-card").style.display = on ? "" : "none";
+}
+
+function initDeveloperMode() {
+  setDevMode(devModeOn());
+
+  let taps = 0;
+  let lastTap = 0;
+  [els.accountPhoto, els.accountPhotoPlaceholder].forEach((icon) => {
+    icon.style.touchAction = "manipulation"; // no double-tap zoom on rapid taps
+    icon.addEventListener("click", () => {
+      const now = Date.now();
+      taps = now - lastTap > DEV_TAP_GAP_MS ? 1 : taps + 1;
+      lastTap = now;
+      if (taps >= DEV_TAPS) {
+        taps = 0;
+        setDevMode(true);
+      }
+    });
+  });
+
+  const n = document.getElementById("dev-n");
+  const tier = document.getElementById("dev-tier");
+  const destructive = { setStreak: "למחוק את כל הנתונים ולבנות רצף מדומה?", reset: "למחוק את כל הנתונים?" };
+  document.getElementById("dev-card").addEventListener("click", async (e) => {
+    const name = e.target.closest("[data-dev]")?.dataset.dev;
+    if (!name) return;
+    if (destructive[name] && !confirm(destructive[name])) return;
+    const t = window.__test;
+    const days = parseInt(n.value, 10);
+    switch (name) {
+      case "previewCelebrationTier": return t.previewCelebration(tier.value);
+      case "previewAllCelebrations":
+      case "reset": return t[name]();
+      default: return t[name](days);
+    }
+  });
+  document.getElementById("dev-hide-btn").addEventListener("click", () => setDevMode(false));
 }
 
 async function handleCheckForUpdates() {
