@@ -32,8 +32,8 @@ html, body {
   overscroll-behavior: none;
 }
 
-/* The page itself never scrolls: each .screen scrolls inside #app and the tab
-   bar is a non-scrolling flex sibling, so it stays put in every browser. */
+/* The page itself never scrolls: each .screen scrolls inside #app, so the
+   fixed tab bar cannot move with the content (Firefox did that before). */
 html, body {
   height: 100%;
   overflow: hidden;
@@ -226,7 +226,7 @@ body {
 .screen {
   flex: 1;
   min-height: 0;
-  padding: calc(var(--safe-top) + 14px) 16px 20px;
+  padding: calc(var(--safe-top) + 14px) 16px calc(76px + var(--safe-bottom));
   display: none;
   overflow-x: hidden;
   overflow-y: auto;
@@ -355,7 +355,10 @@ body {
 .reward-sub { font-size: 13px; color: var(--text-dim); margin-top: 2px; }
 
 .tabbar {
-  flex: none;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   display: flex;
   background: var(--tab-bg);
   backdrop-filter: blur(20px);
