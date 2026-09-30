@@ -9,6 +9,7 @@ import { initInvites } from "./ui-invites.js";
 import { initAuthGate } from "./auth-gate.js";
 import { renderGuestView } from "./guest-view.js";
 import "./devtools.js";
+import { initPullToRefresh } from "./pull-to-refresh.js";
 
 export const App = {
   settings: null,
@@ -162,6 +163,10 @@ export async function checkForUpdatesNow() {
 }
 
 async function bootApp() {
+  initPullToRefresh(async () => {
+    await checkForUpdatesNow();
+    await refreshAll();
+  });
   App.prizeManifest = await loadPrizeManifest();
   initHome();
   initHistory();
@@ -175,7 +180,13 @@ function boot() {
   setupTabs();
   pinTabbarToVisualViewport();
   registerServiceWorker();
-  initAuthGate({ onAdmin: bootApp, onGuest: renderGuestView });
+  initAuthGate({
+    onAdmin: bootApp,
+    onGuest: () => {
+      initPullToRefresh(async () => window.location.reload());
+      return renderGuestView();
+    },
+  });
 }
 
 boot();
