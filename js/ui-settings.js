@@ -2,8 +2,7 @@ import { saveSettings, resetAllData } from "./db.js";
 import { App, refreshAll, checkForUpdatesNow } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
 import { APP_VERSION } from "./version.js";
-import { auth, signOutUser, getCalendarAccessToken } from "./firebase-init.js";
-import { syncShifts } from "./calendar-sync.js";
+import { auth, signOutUser } from "./firebase-init.js";
 
 let els = {};
 let saveTimer = null;
@@ -26,10 +25,6 @@ export function initSettings() {
   els.checkUpdateBtn = document.getElementById("check-update-btn");
   els.checkUpdateStatus = document.getElementById("check-update-status");
 
-  els.calendarSyncBtn = document.getElementById("calendar-sync-btn");
-  els.calendarSyncStatus = document.getElementById("calendar-sync-status");
-  els.calendarSyncBtn.addEventListener("click", handleCalendarSync);
-
   renderAccount();
   els.accountSignoutBtn.addEventListener("click", () => signOutUser());
 
@@ -40,27 +35,6 @@ export function initSettings() {
   els.importFile.addEventListener("change", handleImport);
   els.resetBtn.addEventListener("click", handleReset);
   els.checkUpdateBtn.addEventListener("click", handleCheckForUpdates);
-}
-
-async function handleCalendarSync() {
-  els.calendarSyncBtn.disabled = true;
-  els.calendarSyncStatus.textContent = "מתחברת ליומן…";
-  try {
-    const token = await getCalendarAccessToken();
-    els.calendarSyncStatus.textContent = "מסנכרנת…";
-    const { added, updated, removed } = await syncShifts(token);
-    await refreshAll();
-    els.calendarSyncStatus.textContent =
-      added + updated + removed === 0
-        ? "הכול מעודכן — לא נמצאו שינויים."
-        : `הסנכרון הושלם: ${added} נוספו, ${updated} עודכנו, ${removed} הוסרו.`;
-  } catch (err) {
-    console.error("calendar sync failed:", err);
-    const closed = err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request";
-    els.calendarSyncStatus.textContent = closed ? "הסנכרון בוטל." : "הסנכרון נכשל. בדקי חיבור לאינטרנט ונסי שוב.";
-  } finally {
-    els.calendarSyncBtn.disabled = false;
-  }
 }
 
 async function handleCheckForUpdates() {

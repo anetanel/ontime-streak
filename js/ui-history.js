@@ -2,6 +2,8 @@ import { formatLocalDate, parseLocalDate, isScheduledDay, isLateExemptionAvailab
 import { showModal, hideModal, refreshAll } from "./app.js";
 import { saveShift, deleteShift } from "./db.js";
 import { openArrivalTimeForm } from "./ui-home.js";
+import { getCalendarAccessToken } from "./firebase-init.js";
+import { syncShifts } from "./calendar-sync.js";
 
 let els = {};
 let state = {
@@ -24,6 +26,9 @@ export function initHistory() {
   els.calTodayRow = document.getElementById("cal-today-row");
   els.calTodayBtn = document.getElementById("cal-today-btn");
   els.calGrid = document.getElementById("calendar-grid");
+  els.calendarSyncBtn = document.getElementById("calendar-sync-btn");
+  els.calendarSyncStatus = document.getElementById("calendar-sync-status");
+  els.calendarSyncBtn.addEventListener("click", handleCalendarSync);
   els.dayModal = document.getElementById("day-detail-modal");
   els.dayTitle = document.getElementById("day-detail-title");
   els.dayBody = document.getElementById("day-detail-body");
@@ -76,6 +81,27 @@ export function initHistory() {
   els.shiftCancel.addEventListener("click", () => hideModal(els.shiftModal));
   els.shiftSave.addEventListener("click", handleSaveShift);
   els.shiftDelete.addEventListener("click", handleDeleteShift);
+}
+
+async function handleCalendarSync() {
+  els.calendarSyncBtn.disabled = true;
+  els.calendarSyncStatus.textContent = "מתחברת ליומן…";
+  try {
+    const token = await getCalendarAccessToken();
+    els.calendarSyncStatus.textContent = "מסנכרנת…";
+    const { added, updated, removed } = await syncShifts(token);
+    await refreshAll();
+    els.calendarSyncStatus.textContent =
+      added + updated + removed === 0
+        ? "הכול מעודכן — לא נמצאו שינויים."
+        : `הסנכרון הושלם: ${added} נוספו, ${updated} עודכנו, ${removed} הוסרו.`;
+  } catch (err) {
+    console.error("calendar sync failed:", err);
+    const closed = err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request";
+    els.calendarSyncStatus.textContent = closed ? "הסנכרון בוטל." : "הסנכרון נכשל. בדקי חיבור לאינטרנט ונסי שוב.";
+  } finally {
+    els.calendarSyncBtn.disabled = false;
+  }
 }
 
 function populateTimeSelects(hourEl, minuteEl) {
