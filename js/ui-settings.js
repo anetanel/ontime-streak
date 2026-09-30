@@ -47,7 +47,7 @@ const DEV_HINT_FROM = 4;
 const DEV_TAP_GAP_MS = 2000;
 
 let toastTimer = null;
-function showToast(text) {
+function showToast(text, ms = 1600) {
   let el = document.getElementById("toast");
   if (!el) {
     el = document.createElement("div");
@@ -58,7 +58,7 @@ function showToast(text) {
   el.textContent = text;
   el.classList.add("show");
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.remove("show"), 1600);
+  if (ms) toastTimer = setTimeout(() => el.classList.remove("show"), ms); // ms 0: stays until replaced
 }
 
 function devModeOn() {
@@ -134,11 +134,28 @@ function initDeveloperMode() {
     if (destructive[name] && !confirm(destructive[name])) return;
     const t = window.__test;
     const days = parseInt(n.value, 10);
+    let label, run;
     switch (name) {
-      case "previewCelebrationTier": return t.previewCelebration(tier.value);
+      case "previewCelebrationTier":
+        label = `previewCelebration("${tier.value}")`;
+        run = () => t.previewCelebration(tier.value);
+        break;
       case "previewAllCelebrations":
-      case "reset": return t[name]();
-      default: return t[name](days);
+      case "reset":
+        label = `${name}()`;
+        run = () => t[name]();
+        break;
+      default:
+        label = `${name}(${days})`;
+        run = () => t[name](days);
+    }
+    showToast(`${label} רץ…`, 0);
+    try {
+      await run();
+      showToast(`${label} הסתיים`);
+    } catch (err) {
+      console.error(err);
+      showToast(`${label} נכשל`, 3000);
     }
   });
   startViewportReadout();

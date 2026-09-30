@@ -284,6 +284,7 @@ export function renderHome(app) {
     els.rewardCard.innerHTML = `
       <img src="prizes/${active.prizeFile}" alt="${escapeHtml(active.prizeTitle)}" onerror="this.style.display='none'">
       <div>
+        <div class="reward-sub" style="margin:0 0 2px;">הפרס האחרון היה:</div>
         <div class="reward-title">${escapeHtml(active.prizeTitle)}</div>
         <div class="reward-sub">${streakPeriodLabel(active.streakDay)} · ${streakRuleLabel(active.streakDay)}</div>
       </div>

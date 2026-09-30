@@ -14,7 +14,7 @@ export function initPrizes() {
 export function renderPrizes(app) {
   const next = daysUntilNextPrize(app.currentStreak);
   els.nextInfo.textContent = next
-    ? `הפרס הבא בעוד ${next.days} ${next.days === 1 ? "יום" : "ימים"} (${next.tier.label})`
+    ? `הפרס הבא בעוד ${next.days} ${next.days === 1 ? "יום" : "ימים"} (${next.tier.label}, ${streakRuleLabel(app.currentStreak + next.days)})`
     : "";
 
   if (app.prizeAwards.length === 0) {
