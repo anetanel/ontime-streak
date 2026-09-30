@@ -1,6 +1,6 @@
 import { auth, signOutUser } from "./firebase-init.js";
 import { getPrizeAwardsForHousehold, getCommentsForHousehold, addCommentToHousehold, getInvite } from "./db.js";
-import { streakPeriodLabel, streakRuleLabel } from "./prizes.js";
+import { streakPeriodLabel, streakRuleLabel, isHighAward } from "./prizes.js";
 
 let currentGrant = null;
 let listEl = null;
@@ -85,7 +85,7 @@ function renderAwardCard(award, awardComments) {
 
   return `
     <div class="card">
-      <div class="reward-item">
+      <div class="reward-item${isHighAward(award) ? " high" : ""}">
         <img src="prizes/${award.prizeFile}" alt="" onerror="this.style.display='none'">
         <div class="info">
           <div class="title">${escapeHtml(award.prizeTitle)}</div>

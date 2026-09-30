@@ -2,11 +2,16 @@
 // overscroll-behavior:none in styles.css disables the browser's own).
 const THRESHOLD = 70;
 const MAX_PULL = 120;
+// An SVG (not the ⟳ glyph) so the visual center matches the box we rotate around.
+const SPINNER_SVG = '<svg viewBox="0 0 24 24" width="1em" height="1em" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="display:block"><path d="M20 12a8 8 0 1 1-2.34-5.66"/><path d="M20 4v5h-5"/></svg>';
 
 export function initPullToRefresh(onRefresh) {
   const indicator = document.createElement("div");
   indicator.className = "ptr-indicator";
-  indicator.textContent = "↓";
+  const glyph = document.createElement("span");
+  glyph.className = "ptr-glyph";
+  glyph.textContent = "↓";
+  indicator.appendChild(glyph);
   document.body.appendChild(indicator);
 
   let startY = null;
@@ -48,14 +53,14 @@ export function initPullToRefresh(onRefresh) {
     if (pull < THRESHOLD) return reset();
     busy = true;
     indicator.classList.add("spinning", "settling");
-    indicator.textContent = "⟳";
+    glyph.innerHTML = SPINNER_SVG;
     setPull(THRESHOLD);
     try {
       await onRefresh();
     } catch (e) {
       // offline etc.; just stop spinning
     }
-    indicator.textContent = "↓";
+    glyph.textContent = "↓";
     busy = false;
     reset();
   };

@@ -1,5 +1,5 @@
 import { App, refreshAll } from "./app.js";
-import { streakPeriodLabel, streakRuleLabel, daysUntilNextPrize } from "./prizes.js";
+import { streakPeriodLabel, streakRuleLabel, daysUntilNextPrize, isHighAward } from "./prizes.js";
 import { parseLocalDate } from "./streak.js";
 import { deleteMyComment } from "./db.js";
 
@@ -46,7 +46,7 @@ export function renderPrizes(app) {
         .join("");
 
       return `
-        <div class="reward-item">
+        <div class="reward-item${isHighAward(a) ? " high" : ""}">
           <img src="prizes/${a.prizeFile}" alt="" onerror="this.style.display='none'">
           <div class="info">
             <div class="title">${escapeHtml(a.prizeTitle)}</div>

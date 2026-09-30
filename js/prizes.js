@@ -16,6 +16,11 @@ export function getTierByKey(key) {
   return PRIZE_TIERS.find((t) => t.key === k) || null;
 }
 
+export function isHighAward(award) {
+  const t = getTierByKey(award && award.tierKey);
+  return !!t && t.key === "high";
+}
+
 // The streak an award was reached at, e.g. "63 ימים רצופים".
 export function streakPeriodLabel(streakDay) {
   return streakDay === 180 ? "חצי שנה רצופה" : `${streakDay} ימים רצופים`;
@@ -25,11 +30,23 @@ export function streakPeriodLabel(streakDay) {
 // When several intervals in the tier divide the day, the largest is stated (21 -> 7),
 // except 180 which is always stated as the half-year milestone.
 export function streakRuleLabel(streakDay) {
-  const tier = findMatchingTier(streakDay);
-  if (!tier) return "";
-  if (streakDay % 180 === 0) return "פרס על כל חצי שנה רצופה";
-  const n = Math.max(...tier.intervalDays.filter((d) => streakDay % d === 0));
+  const n = streakRuleInterval(streakDay);
+  if (!n) return "";
+  if (n === 180) return "פרס על כל חצי שנה רצופה";
   return `פרס על כל ${n} ימים רצופים`;
+}
+
+// The interval whose milestone an award hit, e.g. day 60 -> 30, day 63 -> 7, day 360 -> 180.
+export function streakRuleInterval(streakDay) {
+  const tier = findMatchingTier(streakDay);
+  if (!tier) return 0;
+  if (streakDay % 180 === 0) return 180;
+  return Math.max(...tier.intervalDays.filter((d) => streakDay % d === 0));
+}
+
+// "7 ימים רצופים" / "חצי שנה רצופה" for the milestone an award hit.
+export function milestoneLabel(streakDay) {
+  return streakPeriodLabel(streakRuleInterval(streakDay));
 }
 
 let manifestPromise = null;

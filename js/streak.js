@@ -49,16 +49,17 @@ export function computeCheckinResult(now, shift) {
  * run" mean the chronologically *first* such day within it, matching
  * isLateExemptionAvailable's notion of which one actually used the pass.
  */
-function scanStreaks(checkinsByDate, shiftsByDate, today, maxDays) {
+function scanStreaks(checkinsByDate, shiftsByDate, today, maxDays, endDate = today) {
   const todayStr = formatLocalDate(today);
+  const endStr = formatLocalDate(endDate);
   const dates = Array.from(checkinsByDate.keys()).sort();
-  const earliestStr = dates.length && dates[0] < todayStr ? dates[0] : todayStr;
+  const earliestStr = dates.length && dates[0] < endStr ? dates[0] : endStr;
 
   let run = 0;
   let longest = 0;
   let exemptionUsed = false;
   const cursor = parseLocalDate(earliestStr);
-  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+  const end = new Date(endDate.getFullYear(), endDate.getMonth(), endDate.getDate());
 
   for (let i = 0; i < maxDays && cursor.getTime() <= end.getTime(); i++) {
     const dateStr = formatLocalDate(cursor);
@@ -84,7 +85,7 @@ function scanStreaks(checkinsByDate, shiftsByDate, today, maxDays) {
     cursor.setDate(cursor.getDate() + 1);
   }
 
-  return { current: run, longest };
+  return { current: run, longest, exemptionUsed };
 }
 
 /**
@@ -101,34 +102,28 @@ export function computeLongestStreak(checkinsByDate, shiftsByDate, today = new D
 
 /**
  * Whether a late check-in on dateStr would still be exempted from
- * breaking the streak, i.e. no "unforeseen" exemption has already been
- * used earlier in the streak period ending the day before dateStr.
+ * breaking the streak, i.e. the "unforeseen" pass hasn't been used in the
+ * run ending the day before dateStr. Reuses the forward scan so it agrees
+ * with computeStreak, including when an earlier "unforeseen" day was itself
+ * a run-breaker (a second use) and so a fresh pass is available again.
  */
 export function isLateExemptionAvailable(checkinsByDate, shiftsByDate, dateStr) {
-  const cursor = parseLocalDate(dateStr);
-  cursor.setDate(cursor.getDate() - 1);
-
-  for (let i = 0; i < 3650; i++) {
-    const cursorStr = formatLocalDate(cursor);
-    if (isScheduledDay(cursorStr, shiftsByDate)) {
-      const rec = checkinsByDate.get(cursorStr);
-      if (rec && rec.status === "on-time") {
-        // continue further back
-      } else if (rec && rec.status === "late" && rec.lateReason === "unforeseen") {
-        return false;
-      } else {
-        return true;
-      }
-    }
-    cursor.setDate(cursor.getDate() - 1);
-  }
-  return true;
+  const dayBefore = parseLocalDate(dateStr);
+  dayBefore.setDate(dayBefore.getDate() - 1);
+  return !scanStreaks(checkinsByDate, shiftsByDate, new Date(), 3650, dayBefore).exemptionUsed;
 }
 
+// Ascending; `min` is the streak length at which the tier's star is earned.
+export const CELEBRATION_TIERS = [
+  { key: "small", min: 1 },
+  { key: "medium", min: 7 },
+  { key: "large", min: 30 },
+  { key: "xlarge", min: 90 },
+  { key: "max", min: 180 },
+];
+
 export function getTierForStreak(streak) {
-  if (streak >= 30) return "max";
-  if (streak >= 14) return "xlarge";
-  if (streak >= 7) return "large";
-  if (streak >= 3) return "medium";
-  return "small";
+  let key = "small";
+  for (const t of CELEBRATION_TIERS) if (streak >= t.min) key = t.key;
+  return key;
 }

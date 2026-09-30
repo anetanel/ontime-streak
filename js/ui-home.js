@@ -2,16 +2,18 @@ import { getCheckin, saveCheckin } from "./db.js";
 import {
   computeCheckinResult,
   getTierForStreak,
+  CELEBRATION_TIERS,
   formatLocalDate,
   parseLocalDate,
   snapToTimeOptions,
   isLateExemptionAvailable,
 } from "./streak.js";
 import { celebrate } from "./confetti.js";
-import { evaluateAndAwardPrize, streakPeriodLabel, streakRuleLabel, daysUntilNextPrize } from "./prizes.js";
+import { evaluateAndAwardPrize, streakPeriodLabel, streakRuleLabel, milestoneLabel, daysUntilNextPrize, isHighAward } from "./prizes.js";
 import { App, refreshAll, showModal, hideModal } from "./app.js";
 
 let els = {};
+let refreshOnRevealClose = false;
 let reasonResolve = null;
 let checkinEditingDate = null;
 
@@ -23,6 +25,7 @@ export function initHome() {
   els.shiftInfo = document.getElementById("home-shift-info");
   els.rewardCard = document.getElementById("home-reward-card");
   els.nextPrize = document.getElementById("home-next-prize");
+  els.tierStars = document.getElementById("home-tier-stars");
   els.canvas = document.getElementById("celebration-canvas");
   els.revealModal = document.getElementById("reveal-modal");
   els.revealImg = document.getElementById("reveal-img");
@@ -48,7 +51,13 @@ export function initHome() {
   populateTimeSelects();
 
   els.btn.addEventListener("click", handleCheckin);
-  els.revealClose.addEventListener("click", () => hideModal(els.revealModal));
+  els.revealClose.addEventListener("click", () => {
+    hideModal(els.revealModal);
+    if (refreshOnRevealClose) {
+      refreshOnRevealClose = false;
+      refreshAll();
+    }
+  });
 
   els.reasonHabit.addEventListener("click", () => resolveLateReason("habit"));
   els.reasonUnforeseen.addEventListener("click", () => resolveLateReason("unforeseen"));
@@ -204,6 +213,7 @@ export async function celebrateOnTimeCheckin(dateStr) {
 
   const award = await evaluateAndAwardPrize(App, dateStr);
   if (award) {
+    refreshOnRevealClose = true;
     showPrizeReveal(award);
   }
 }
@@ -218,7 +228,7 @@ export function showPrizeReveal(award) {
     els.revealPlaceholder.style.display = "flex";
     els.revealPlaceholder.textContent = "🎉";
   }
-  els.revealTitle.textContent = `זכית בפרס! ${streakPeriodLabel(award.streakDay)} (${streakRuleLabel(award.streakDay)})`;
+  els.revealTitle.textContent = `כל הכבוד! הגעת בזמן ${milestoneLabel(award.streakDay)} וזכית בפרס${isHighAward(award) ? " גדול" : ""}!`;
   els.revealSub.textContent = award.prizeTitle;
   els.revealClose.textContent = "מעולה!";
   showModal(els.revealModal);
@@ -227,6 +237,11 @@ export function showPrizeReveal(award) {
 export function renderHome(app) {
   els.currentStreak.textContent = app.currentStreak;
   els.longestStreak.textContent = app.longestStreak;
+
+  els.tierStars.innerHTML = CELEBRATION_TIERS.map((t) => {
+    const earned = app.currentStreak >= t.min;
+    return `<div class="tier-star${earned ? " earned" : ""}"><span class="star">${earned ? "⭐" : "☆"}</span><span class="stat-label">${t.min}</span></div>`;
+  }).join("");
 
   const today = formatLocalDate(new Date());
   const todayRecord = app.checkinsByDate.get(today);
@@ -265,6 +280,7 @@ export function renderHome(app) {
 
   const active = app.prizeAwards[0];
   if (active) {
+    els.rewardCard.classList.toggle("high", isHighAward(active));
     els.rewardCard.innerHTML = `
       <img src="prizes/${active.prizeFile}" alt="${escapeHtml(active.prizeTitle)}" onerror="this.style.display='none'">
       <div>
@@ -273,6 +289,7 @@ export function renderHome(app) {
       </div>
     `;
   } else {
+    els.rewardCard.classList.remove("high");
     els.rewardCard.innerHTML = `
       <div class="placeholder">🎵</div>
       <div>

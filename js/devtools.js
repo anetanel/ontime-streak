@@ -100,6 +100,15 @@ function previewPrize(streakDay) {
   showPrizeReveal({ tierKey: tier.key, prizeFile: prize.file, prizeTitle: prize.title, streakDay });
 }
 
+// Browsers keep audio muted until the page itself (not the devtools console) has been clicked or tapped.
+function warnIfSoundBlocked(soundEnabled) {
+  if (!soundEnabled) {
+    console.log("[test] Sound is turned off in settings, so this preview will be silent.");
+  } else if (navigator.userActivation && !navigator.userActivation.hasBeenActive) {
+    console.log("[test] No sound: click anywhere on the page first (the browser blocks audio until you do), then run this again.");
+  }
+}
+
 function previewCelebration(tierOrStreak) {
   let tier;
   if (typeof tierOrStreak === "string") {
@@ -117,12 +126,14 @@ function previewCelebration(tierOrStreak) {
 
   const canvas = document.getElementById("celebration-canvas");
   const soundEnabled = App.settings ? App.settings.soundEnabled : true;
+  warnIfSoundBlocked(soundEnabled);
   console.log(`[test] Playing "${tier}" tier celebration${typeof tierOrStreak === "number" ? ` (streak day ${tierOrStreak})` : ""}.`);
   celebrate(canvas, tier, soundEnabled);
 }
 
 function previewAllCelebrations() {
-  const gapMs = 4000; // generous fixed gap; the heavier tiers run up to ~6.5s themselves
+  const gapMs = 4000;
+  warnIfSoundBlocked(App.settings ? App.settings.soundEnabled : true); // generous fixed gap; the heavier tiers run up to ~6.5s themselves
   CELEBRATION_TIERS.forEach((tier, i) => {
     setTimeout(() => previewCelebration(tier), i * gapMs);
   });
