@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v86";
+const CACHE_NAME = "ontime-streak-v87";
 const ASSETS = [
   "./",
   "./index.html",

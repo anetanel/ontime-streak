@@ -9,7 +9,9 @@ function prefersReducedMotion() {
 
 // iOS mutes Web Audio when the hardware silent switch is on, so the app cannot control its own
 // sound. Marking the audio session as "playback" (Safari 16.4+) makes it ignore the switch; older
-// iOS needs a real <audio> element playing (silently) alongside the Web Audio output.
+// iOS needs a real <audio> element playing (silently) alongside the Web Audio output. That element
+// makes iOS show the app in the Dynamic Island / lock screen as "now playing", so it is only used
+// where audioSession is missing, and the session goes back to "auto" once the sound ends.
 let silentEl = null;
 function makeSilentAudio() {
   const rate = 8000;
@@ -26,9 +28,9 @@ function makeSilentAudio() {
   return el;
 }
 
-function setPlaybackSession() {
+function setPlaybackSession(type = "playback") {
   try {
-    if (navigator.audioSession) navigator.audioSession.type = "playback";
+    if (navigator.audioSession) navigator.audioSession.type = type;
   } catch (e) {
     // unsupported, ignore
   }
@@ -36,7 +38,7 @@ function setPlaybackSession() {
 
 // Called on the first user gesture so a later (non-gesture) play() is allowed.
 function primeAudio() {
-  setPlaybackSession();
+  if (navigator.audioSession) return;
   try {
     if (!silentEl) silentEl = makeSilentAudio();
     const p = silentEl.play();
@@ -318,6 +320,7 @@ function playCelebrationSound(tier, config) {
     setTimeout(() => {
       ctx.close();
       if (silentEl) silentEl.pause();
+      setPlaybackSession("auto");
     }, config.duration + 4000);
   } catch (e) {
     // audio not available, ignore
