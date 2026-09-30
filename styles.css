@@ -838,3 +838,21 @@ body {
 .tier-star { display: flex; flex-direction: column; align-items: center; gap: 2px; }
 .tier-star .star { font-size: 30px; line-height: 1; color: var(--text-dim); }
 .tier-star.earned .star { filter: drop-shadow(0 0 6px rgba(255, 200, 0, 0.6)); }
+
+.toast {
+  position: fixed;
+  left: 50%;
+  bottom: calc(90px + var(--safe-bottom));
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  border-radius: 20px;
+  background: rgba(30, 30, 34, 0.92);
+  color: #fff;
+  font-size: 15px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+  z-index: 60;
+}
+.toast.show { opacity: 1; }

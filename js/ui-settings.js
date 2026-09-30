@@ -43,7 +43,23 @@ export function initSettings() {
 // with a button per window.__test helper. Taps more than 2s apart restart the count.
 const DEV_KEY = "devMode";
 const DEV_TAPS = 10;
+const DEV_HINT_FROM = 4;
 const DEV_TAP_GAP_MS = 2000;
+
+let toastTimer = null;
+function showToast(text) {
+  let el = document.getElementById("toast");
+  if (!el) {
+    el = document.createElement("div");
+    el.id = "toast";
+    el.className = "toast";
+    document.body.appendChild(el);
+  }
+  el.textContent = text;
+  el.classList.add("show");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove("show"), 1600);
+}
 
 function devModeOn() {
   try { return localStorage.getItem(DEV_KEY) === "1"; } catch { return false; }
@@ -54,6 +70,38 @@ function setDevMode(on) {
   document.getElementById("dev-card").style.display = on ? "" : "none";
 }
 
+// Shows what iOS reports for the viewport, to debug the tab bar position.
+function startViewportReadout() {
+  const out = document.getElementById("dev-viewport");
+  const probe = document.createElement("div");
+  probe.style.cssText = "position:fixed;top:0;left:0;height:100vh;width:0;visibility:hidden;pointer-events:none";
+  document.body.appendChild(probe);
+  const safe = document.createElement("div");
+  safe.style.cssText = "position:fixed;padding-bottom:env(safe-area-inset-bottom,0px);visibility:hidden";
+  document.body.appendChild(safe);
+  const r = (sel) => {
+    const el = document.querySelector(sel);
+    if (!el) return "-";
+    const b = el.getBoundingClientRect();
+    return `top ${Math.round(b.top)} bottom ${Math.round(b.bottom)}`;
+  };
+  const update = () => {
+    const vv = window.visualViewport;
+    out.textContent = [
+      `innerHeight ${window.innerHeight}  clientHeight ${document.documentElement.clientHeight}`,
+      `visualViewport h ${vv ? Math.round(vv.height) : "-"} top ${vv ? Math.round(vv.offsetTop) : "-"}`,
+      `screen h ${screen.height}  100vh ${probe.offsetHeight}  safe-bottom ${parseFloat(getComputedStyle(safe).paddingBottom)}`,
+      `standalone ${navigator.standalone === true}`,
+      `#app ${r("#app")}`,
+      `tabbar ${r(".tabbar")}`,
+    ].join("\n");
+  };
+  ["resize", "orientationchange"].forEach((e) => window.addEventListener(e, update));
+  if (window.visualViewport) window.visualViewport.addEventListener("resize", update);
+  document.querySelector('.tabbar [data-screen="settings"]').addEventListener("click", update);
+  update();
+}
+
 function initDeveloperMode() {
   setDevMode(devModeOn());
 
@@ -62,12 +110,17 @@ function initDeveloperMode() {
   [els.accountPhoto, els.accountPhotoPlaceholder].forEach((icon) => {
     icon.style.touchAction = "manipulation"; // no double-tap zoom on rapid taps
     icon.addEventListener("click", () => {
+      if (devModeOn()) return;
       const now = Date.now();
       taps = now - lastTap > DEV_TAP_GAP_MS ? 1 : taps + 1;
       lastTap = now;
       if (taps >= DEV_TAPS) {
         taps = 0;
         setDevMode(true);
+        showToast("מצב מפתחים הופעל");
+      } else if (taps >= DEV_HINT_FROM) {
+        const left = DEV_TAPS - taps;
+        showToast(`עוד ${left} לחיצות להפעלת מצב מפתחים`);
       }
     });
   });
@@ -88,6 +141,7 @@ function initDeveloperMode() {
       default: return t[name](days);
     }
   });
+  startViewportReadout();
   document.getElementById("dev-hide-btn").addEventListener("click", () => setDevMode(false));
 }
 
