@@ -7,26 +7,318 @@ function prefersReducedMotion() {
   return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function playChime(kind) {
+// iOS mutes Web Audio when the hardware silent switch is on, so the app cannot control its own
+// sound. Marking the audio session as "playback" (Safari 16.4+) makes it ignore the switch; older
+// iOS needs a real <audio> element playing (silently) alongside the Web Audio output.
+let silentEl = null;
+function makeSilentAudio() {
+  const rate = 8000;
+  const n = rate; // 1s of silence
+  const b = new Uint8Array(44 + n).fill(128);
+  const dv = new DataView(b.buffer);
+  const str = (o, t) => [...t].forEach((c, i) => b[o + i] = c.charCodeAt(0));
+  str(0, "RIFF"); dv.setUint32(4, 36 + n, true); str(8, "WAVEfmt ");
+  dv.setUint32(16, 16, true); dv.setUint16(20, 1, true); dv.setUint16(22, 1, true);
+  dv.setUint32(24, rate, true); dv.setUint32(28, rate, true); dv.setUint16(32, 1, true);
+  dv.setUint16(34, 8, true); str(36, "data"); dv.setUint32(40, n, true);
+  const el = new Audio(URL.createObjectURL(new Blob([b], { type: "audio/wav" })));
+  el.loop = true;
+  return el;
+}
+
+function setPlaybackSession() {
   try {
+    if (navigator.audioSession) navigator.audioSession.type = "playback";
+  } catch (e) {
+    // unsupported, ignore
+  }
+}
+
+// Called on the first user gesture so a later (non-gesture) play() is allowed.
+function primeAudio() {
+  setPlaybackSession();
+  try {
+    if (!silentEl) silentEl = makeSilentAudio();
+    const p = silentEl.play();
+    if (p && p.then) p.then(() => silentEl.pause()).catch(() => {});
+  } catch (e) {
+    // ignore
+  }
+}
+
+["touchend", "pointerdown", "click"].forEach((evt) => {
+  document.addEventListener(evt, primeAudio, { once: true, capture: true });
+});
+
+// --- Celebration sound: synthesized with Web Audio, one distinct score per tier ---
+const N = { C4: 261.63, D4: 293.66, E4: 329.63, G4: 392, A4: 440, B4: 493.88, C5: 523.25, D5: 587.33, E5: 659.25, F5: 698.46, G5: 783.99, A5: 880, B5: 987.77, C6: 1046.5, E6: 1318.5, G6: 1568, C7: 2093 };
+
+function makeReverb(ctx, seconds = 1.8) {
+  const rate = ctx.sampleRate;
+  const len = Math.floor(rate * seconds);
+  const buf = ctx.createBuffer(2, len, rate);
+  for (let c = 0; c < 2; c++) {
+    const d = buf.getChannelData(c);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.5);
+  }
+  const conv = ctx.createConvolver();
+  conv.buffer = buf;
+  return conv;
+}
+
+function makeNoise(ctx, seconds) {
+  const len = Math.floor(ctx.sampleRate * seconds);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) d[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  return src;
+}
+
+function createSynth(ctx) {
+  const master = ctx.createGain();
+  master.gain.value = 0.8;
+  const comp = ctx.createDynamicsCompressor();
+  master.connect(comp).connect(ctx.destination);
+  const dry = ctx.createGain();
+  dry.connect(master);
+  const wet = ctx.createGain();
+  wet.gain.value = 0.35;
+  const reverb = makeReverb(ctx);
+  reverb.connect(wet).connect(master);
+  const out = ctx.createGain();
+  out.connect(dry);
+  out.connect(reverb);
+
+  // A bright, slightly detuned note (two oscillators + a soft octave) with a bell-like decay.
+  function tone(freq, at, dur = 0.5, { type = "triangle", vol = 0.16, attack = 0.012, detune = 6, octave = 0.35 } = {}) {
+    const t = ctx.currentTime + at;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + attack);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    g.connect(out);
+    [[type, freq, -detune, 1], [type, freq, detune, 1], ["sine", freq * 2, 0, octave]].forEach(([wave, f, det, amp]) => {
+      const o = ctx.createOscillator();
+      const og = ctx.createGain();
+      o.type = wave;
+      o.frequency.value = f;
+      o.detune.value = det;
+      og.gain.value = amp * 0.5;
+      o.connect(og).connect(g);
+      o.start(t);
+      o.stop(t + dur + 0.05);
+    });
+  }
+
+  // Sustained brassy chord (sawtooth through a lowpass) for fanfare hits.
+  function brass(freqs, at, dur = 0.6, vol = 0.07) {
+    const t = ctx.currentTime + at;
+    const lp = ctx.createBiquadFilter();
+    lp.type = "lowpass";
+    lp.frequency.setValueAtTime(600, t);
+    lp.frequency.linearRampToValueAtTime(3200, t + 0.08);
+    lp.frequency.exponentialRampToValueAtTime(900, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0, t);
+    g.gain.linearRampToValueAtTime(vol, t + 0.03);
+    g.gain.setValueAtTime(vol, t + dur * 0.6);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    lp.connect(g).connect(out);
+    freqs.forEach((f) => {
+      [-7, 7].forEach((det) => {
+        const o = ctx.createOscillator();
+        o.type = "sawtooth";
+        o.frequency.value = f;
+        o.detune.value = det;
+        o.connect(lp);
+        o.start(t);
+        o.stop(t + dur + 0.05);
+      });
+    });
+  }
+
+  // Short filtered-noise burst: a confetti "pop".
+  function pop(at, vol = 0.35) {
+    const t = ctx.currentTime + at;
+    const n = makeNoise(ctx, 0.2);
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(1800, t);
+    bp.frequency.exponentialRampToValueAtTime(500, t + 0.12);
+    bp.Q.value = 0.8;
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.15);
+    n.connect(bp).connect(g).connect(out);
+    n.start(t);
+    n.stop(t + 0.2);
+    thump(at, 0.5 * vol);
+  }
+
+  // Low sine drop: the body of a pop, a firework boom, or a drum hit.
+  function thump(at, vol = 0.3, f0 = 150, f1 = 45, dur = 0.25) {
+    const t = ctx.currentTime + at;
+    const o = ctx.createOscillator();
+    o.frequency.setValueAtTime(f0, t);
+    o.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.connect(g).connect(out);
+    o.start(t);
+    o.stop(t + dur + 0.02);
+  }
+
+  // Rising filtered-noise whoosh (firework launch / build-up).
+  function sweep(at, dur = 0.8, f0 = 300, f1 = 5000, vol = 0.18) {
+    const t = ctx.currentTime + at;
+    const n = makeNoise(ctx, dur + 0.1);
+    const bp = ctx.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.Q.value = 1.5;
+    bp.frequency.setValueAtTime(f0, t);
+    bp.frequency.exponentialRampToValueAtTime(f1, t + dur);
+    const g = ctx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(vol, t + dur * 0.9);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur + 0.05);
+    n.connect(bp).connect(g).connect(out);
+    n.start(t);
+    n.stop(t + dur + 0.1);
+  }
+
+  // Cluster of tiny high pings, like glitter.
+  function sparkle(at, count = 8, span = 0.6, vol = 0.07) {
+    const pool = [N.C6, N.E6, N.G6, N.C7, N.B5, N.G5];
+    for (let i = 0; i < count; i++) {
+      tone(pool[Math.floor(Math.random() * pool.length)], at + Math.random() * span, 0.25, { type: "sine", vol, octave: 0, detune: 0 });
+    }
+  }
+
+  // Fast rising arpeggio run.
+  function run(notes, at, step = 0.07, dur = 0.4, vol = 0.14) {
+    notes.forEach((f, i) => tone(f, at + i * step, dur, { vol }));
+  }
+
+  // Firework crackle: rapid random tiny ticks.
+  function crackle(at, span = 1, count = 22) {
+    for (let i = 0; i < count; i++) {
+      const t = ctx.currentTime + at + Math.random() * span;
+      const n = makeNoise(ctx, 0.05);
+      const hp = ctx.createBiquadFilter();
+      hp.type = "highpass";
+      hp.frequency.value = 3000 + Math.random() * 3000;
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0.08 + Math.random() * 0.08, t);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.03);
+      n.connect(hp).connect(g).connect(out);
+      n.start(t);
+      n.stop(t + 0.05);
+    }
+  }
+
+  return { tone, brass, pop, thump, sweep, sparkle, run, crackle };
+}
+
+// Each score gets the tier's confetti burst/shell times (seconds) so booms line up with the visuals.
+const SCORES = {
+  small(s) {
+    s.pop(0, 0.3);
+    s.sparkle(0.05, 4, 0.3);
+    s.tone(N.G5, 0.05, 0.35);
+    s.tone(N.C6, 0.14, 0.5);
+  },
+  medium(s, { bursts }) {
+    s.tone(N.E5, 0, 0.5);
+    s.tone(N.B5, 0.09, 0.7);
+    s.tone(N.E6, 0.18, 0.9, { vol: 0.13 });
+    s.sparkle(0.2, 8, 0.9);
+    bursts.forEach((t) => s.pop(t));
+  },
+  large(s, { bursts, shells }) {
+    s.sweep(0, 0.5, 400, 4000, 0.15);
+    s.run([N.C5, N.E5, N.G5, N.C6, N.E6], 0.45, 0.07, 0.6);
+    s.brass([N.C5, N.E5, N.G5], 0.85, 0.9, 0.06);
+    s.sparkle(0.9, 12, 1.5);
+    bursts.forEach((t) => s.pop(t));
+    shells.forEach((t) => {
+      s.sweep(t, 0.35, 500, 3500, 0.1);
+      s.thump(t + 0.35, 0.35, 120, 40, 0.4);
+      s.crackle(t + 0.35, 0.5, 10);
+    });
+  },
+  xlarge(s, { bursts, shells, duration }) {
+    // Fanfare: G-G-G-C (dotted) then a big major chord.
+    s.thump(0, 0.4);
+    s.brass([N.G4, N.C5, N.E5], 0.1, 0.16);
+    s.brass([N.G4, N.C5, N.E5], 0.3, 0.16);
+    s.brass([N.G4, N.C5, N.E5], 0.5, 0.16);
+    s.brass([N.C5, N.E5, N.G5], 0.7, 1.2, 0.08);
+    s.run([N.C5, N.E5, N.G5, N.C6, N.E6, N.G6], 0.75, 0.06, 0.7);
+    s.sparkle(0.9, 16, 2.5);
+    s.sweep(2.4, 1, 300, 6000, 0.15);
+    s.run([N.G5, N.B5, N.D5 * 2, N.G6], 3.2, 0.08, 0.8, 0.13);
+    bursts.forEach((t) => s.pop(t));
+    shells.forEach((t) => {
+      s.sweep(t, 0.4, 500, 4000, 0.1);
+      s.thump(t + 0.4, 0.4, 120, 40, 0.45);
+      s.crackle(t + 0.4, 0.7, 14);
+    });
+    s.crackle(duration / 1000 - 1, 1.2, 16);
+  },
+  max(s, { bursts, shells, duration }) {
+    const total = duration / 1000;
+    // Drum-roll build into the big hit.
+    for (let i = 0; i < 14; i++) s.thump(i * 0.08 + i * i * 0.004, 0.12 + i * 0.015, 220, 90, 0.12);
+    s.sweep(0, 1.4, 200, 7000, 0.2);
+    // Grand fanfare (C major -> F -> G -> C)
+    s.thump(1.4, 0.6, 130, 35, 0.6);
+    s.brass([N.C4, N.E4, N.G4, N.C5], 1.4, 1.0, 0.09);
+    s.run([N.C5, N.E5, N.G5, N.C6, N.E6, N.G6, N.C7], 1.4, 0.055, 0.9);
+    s.sparkle(1.5, 24, 3);
+    s.brass([N.F5 / 2, N.A4, N.C5, N.F5], 2.6, 0.7, 0.08);
+    s.brass([N.G4, N.B4, N.D5, N.G5], 3.3, 0.7, 0.08);
+    s.brass([N.C5, N.E5, N.G5, N.C6], 4.0, 2.2, 0.09);
+    s.run([N.C5, N.E5, N.G5, N.C6, N.E6, N.G6, N.C7], 4.0, 0.05, 1.2, 0.12);
+    s.thump(4.0, 0.6, 130, 35, 0.7);
+    // Celebratory melody bouncing over the middle section (C-D-E-G-E-G-C).
+    [N.E5, N.G5, N.C6, N.G5, N.C6, N.E6, N.C6, N.E6, N.G6].forEach((f, i) => s.tone(f, 6.4 + i * 0.16, 0.5, { vol: 0.13 }));
+    s.sweep(8.4, 1.2, 300, 7000, 0.18);
+    // Final ascending run and closing chord.
+    s.run([N.C5, N.D5, N.E5, N.G5, N.A5, N.C6, N.E6, N.G6, N.C7], 9.6, 0.07, 1.0);
+    s.brass([N.C5, N.E5, N.G5, N.C6], 10.3, 1.6, 0.09);
+    s.thump(10.3, 0.6, 130, 35, 0.8);
+    s.sparkle(10.3, 24, 1.6);
+    bursts.forEach((t) => s.pop(t, 0.4));
+    shells.forEach((t) => {
+      s.sweep(t, 0.4, 500, 4000, 0.1);
+      s.thump(t + 0.4, 0.45, 120, 40, 0.5);
+      s.crackle(t + 0.4, 0.8, 16);
+    });
+    s.crackle(0, total, 60);
+  },
+};
+
+function playCelebrationSound(tier, config) {
+  try {
+    const score = SCORES[tier];
+    if (!score) return;
     const AudioCtx = window.AudioContext || window.webkitAudioContext;
     if (!AudioCtx) return;
+    setPlaybackSession();
     const ctx = new AudioCtx();
-    const notes = kind === "cheer" ? [523.25, 659.25, 783.99, 1046.5] : [659.25, 987.77];
-    notes.forEach((freq, i) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.type = "sine";
-      osc.frequency.value = freq;
-      const startTime = ctx.currentTime + i * 0.09;
-      gain.gain.setValueAtTime(0, startTime);
-      gain.gain.linearRampToValueAtTime(0.15, startTime + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.35);
-      osc.connect(gain).connect(ctx.destination);
-      osc.start(startTime);
-      osc.stop(startTime + 0.4);
-    });
-    setTimeout(() => ctx.close(), 1200);
+    if (ctx.state === "suspended") ctx.resume();
+    if (silentEl) silentEl.play().catch(() => {});
+    const at = (i, n) => (n === 1 ? 0 : i * (config.duration / (n + 1))) / 1000;
+    const bursts = Array.from({ length: config.burstCount }, (_, i) => at(i, config.burstCount));
+    const shells = Array.from({ length: config.shells }, (_, i) => at(i, config.shells));
+    score(createSynth(ctx), { bursts, shells, duration: config.duration });
+    setTimeout(() => {
+      ctx.close();
+      if (silentEl) silentEl.pause();
+    }, config.duration + 4000);
   } catch (e) {
     // audio not available, ignore
   }
@@ -266,11 +558,11 @@ class ParticleEngine {
 }
 
 const TIER_CONFIG = {
-  small: { burstCount: 1, particlesPerBurst: 40, duration: 1500, shells: 0, sound: null, emojiRounds: 0, ribbonEveryMs: 0 },
-  medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, sound: "chime", emojiRounds: 0, ribbonEveryMs: 0 },
-  large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, sound: "chime", emojiRounds: 0, ribbonEveryMs: 0 },
-  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, sound: "cheer", emojiRounds: 1, emojiPool: SPECIAL_EMOJIS, ribbonEveryMs: 1800 },
-  max: { burstCount: 8, particlesPerBurst: 65, duration: 12000, shells: 8, sound: "cheer", emojiRounds: 4, emojiPool: MAX_SPECIAL_EMOJIS, ribbonEveryMs: 1500 },
+  small: { burstCount: 1, particlesPerBurst: 40, duration: 1500, shells: 0, emojiRounds: 0, ribbonEveryMs: 0 },
+  medium: { burstCount: 3, particlesPerBurst: 45, duration: 2500, shells: 0, emojiRounds: 0, ribbonEveryMs: 0 },
+  large: { burstCount: 4, particlesPerBurst: 55, duration: 4000, shells: 3, emojiRounds: 0, ribbonEveryMs: 0 },
+  xlarge: { burstCount: 6, particlesPerBurst: 60, duration: 5000, shells: 5, emojiRounds: 1, emojiPool: SPECIAL_EMOJIS, ribbonEveryMs: 1800 },
+  max: { burstCount: 8, particlesPerBurst: 65, duration: 12000, shells: 8, emojiRounds: 4, emojiPool: MAX_SPECIAL_EMOJIS, ribbonEveryMs: 1500 },
 };
 
 export function celebrate(canvas, tier, soundEnabled) {
@@ -319,8 +611,8 @@ export function celebrate(canvas, tier, soundEnabled) {
     }
   }
 
-  if (soundEnabled && config.sound && !reduced) {
-    playChime(config.sound);
+  if (soundEnabled && !reduced) {
+    playCelebrationSound(tier in TIER_CONFIG ? tier : "small", config);
   }
 
   setTimeout(() => engine.stop(), config.duration + 500);
