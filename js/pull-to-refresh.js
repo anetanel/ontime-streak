@@ -14,8 +14,6 @@ export function initPullToRefresh(onRefresh) {
   indicator.appendChild(glyph);
   document.body.appendChild(indicator);
 
-  const scrollTop = () => document.querySelector(".screen.active")?.scrollTop ?? 0;
-
   let startY = null;
   let pull = 0;
   let busy = false;
@@ -34,7 +32,7 @@ export function initPullToRefresh(onRefresh) {
   };
 
   document.addEventListener("touchstart", (e) => {
-    const blocked = busy || e.touches.length !== 1 || scrollTop() > 0 ||
+    const blocked = busy || e.touches.length !== 1 || window.scrollY > 0 ||
       e.target.closest(".modal, .modal-backdrop, input, textarea, select");
     startY = blocked ? null : e.touches[0].clientY;
   }, { passive: true });
@@ -42,7 +40,7 @@ export function initPullToRefresh(onRefresh) {
   document.addEventListener("touchmove", (e) => {
     if (startY === null) return;
     const dy = e.touches[0].clientY - startY;
-    if (dy <= 0 || scrollTop() > 0) {
+    if (dy <= 0 || window.scrollY > 0) {
       if (pull) setPull(0);
       return;
     }
