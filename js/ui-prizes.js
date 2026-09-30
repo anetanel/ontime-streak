@@ -1,5 +1,5 @@
 import { App, refreshAll } from "./app.js";
-import { PRIZE_TIERS, streakPeriodLabel, streakRuleLabel, daysUntilNextPrize } from "./prizes.js";
+import { streakPeriodLabel, streakRuleLabel, daysUntilNextPrize } from "./prizes.js";
 import { parseLocalDate } from "./streak.js";
 import { deleteMyComment } from "./db.js";
 
@@ -7,17 +7,8 @@ let els = {};
 
 export function initPrizes() {
   els.nextInfo = document.getElementById("next-prize-info");
-  els.tierLegend = document.getElementById("tier-legend");
   els.list = document.getElementById("prizes-list");
   els.empty = document.getElementById("prizes-empty");
-
-  els.tierLegend.innerHTML = PRIZE_TIERS.slice()
-    .reverse()
-    .map((t) => {
-      const count = (App.prizeManifest && App.prizeManifest[t.key] && App.prizeManifest[t.key].prizes.length) || 0;
-      return `<div class="row-toggle"><span>${t.label}</span><span class="stat-label">${count} תמונות בקבוצה</span></div>`;
-    })
-    .join("");
 }
 
 export function renderPrizes(app) {

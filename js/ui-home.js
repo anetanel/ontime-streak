@@ -284,7 +284,7 @@ export function renderHome(app) {
 
   const next = daysUntilNextPrize(app.currentStreak);
   els.nextPrize.textContent = next
-    ? `הפרס הבא בעוד ${next.days} ${next.days === 1 ? "יום" : "ימים"}`
+    ? `הפרס הבא בעוד ${next.days} ${next.days === 1 ? "יום" : "ימים"} (${next.tier.label}, ${streakRuleLabel(app.currentStreak + next.days)})`
     : "";
 }
 
