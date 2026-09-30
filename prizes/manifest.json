@@ -1,22 +1,246 @@
 {
-  "tier1": {
+  "low": {
     "prizes": [
-      { "file": "tier1/placeholder.jpg", "title": "פרס לדוגמה — החליפי אותי!" }
+      {
+        "file": "low/alon-olearchik.jpg",
+        "title": "אלון אולארצ'יק"
+      },
+      {
+        "file": "low/amir-lev.jpg",
+        "title": "עמיר לב"
+      },
+      {
+        "file": "low/anteater.jpg",
+        "title": "דב נמלים"
+      },
+      {
+        "file": "low/apples.jpg",
+        "title": "תפוחים בשלל צבעים"
+      },
+      {
+        "file": "low/avocado.jpg",
+        "title": "אבוקדו"
+      },
+      {
+        "file": "low/carrots.jpg",
+        "title": "גזרים"
+      },
+      {
+        "file": "low/cherries.jpg",
+        "title": "דובדבנים"
+      },
+      {
+        "file": "low/cherry-blossom.jpg",
+        "title": "פריחת הדובדבן"
+      },
+      {
+        "file": "low/debbie-harry.jpg",
+        "title": "דבי הארי"
+      },
+      {
+        "file": "low/disney.jpg",
+        "title": "גופי — דמות דיסני"
+      },
+      {
+        "file": "low/drums.jpg",
+        "title": "תופים"
+      },
+      {
+        "file": "low/dusty-springfield.jpg",
+        "title": "דאסטי ספרינגפילד"
+      },
+      {
+        "file": "low/ehud-banai.jpg",
+        "title": "אהוד בנאי"
+      },
+      {
+        "file": "low/eyal-talmudi.jpg",
+        "title": "אייל תלמודי"
+      },
+      {
+        "file": "low/firefly.jpg",
+        "title": "גחלילית"
+      },
+      {
+        "file": "low/flying-squirrel.jpg",
+        "title": "סנאי מעופף"
+      },
+      {
+        "file": "low/grover.jpg",
+        "title": "גרובר מסימסטריט"
+      },
+      {
+        "file": "low/guitar.jpg",
+        "title": "גיטרה"
+      },
+      {
+        "file": "low/kittens.jpg",
+        "title": "גורי חתולים"
+      },
+      {
+        "file": "low/lettuce.jpg",
+        "title": "חסה"
+      },
+      {
+        "file": "low/lion.jpg",
+        "title": "אריה"
+      },
+      {
+        "file": "low/peanut-butter.jpg",
+        "title": "חמאת בוטנים"
+      },
+      {
+        "file": "low/peas.jpg",
+        "title": "אפונה"
+      },
+      {
+        "file": "low/pet-rat.jpg",
+        "title": "חולדת מחמד"
+      },
+      {
+        "file": "low/piano.jpg",
+        "title": "פסנתר"
+      },
+      {
+        "file": "low/piglet.jpg",
+        "title": "חזרזיר"
+      },
+      {
+        "file": "low/pink-panther-anteater.jpg",
+        "title": "הפנתר הוורוד"
+      },
+      {
+        "file": "low/puppies.jpg",
+        "title": "גורי כלבים"
+      },
+      {
+        "file": "low/rainbow.jpg",
+        "title": "קשת בענן"
+      },
+      {
+        "file": "low/ram-orion.jpg",
+        "title": "רם אוריון"
+      },
+      {
+        "file": "low/rami-fortis.jpg",
+        "title": "רמי פורטיס"
+      },
+      {
+        "file": "low/ramzi-abed-ramzi.jpg",
+        "title": "רמזי עבד רמזי — קופה ראשית"
+      },
+      {
+        "file": "low/salad.jpg",
+        "title": "סלט"
+      },
+      {
+        "file": "low/shabi.jpg",
+        "title": "שבי מפרפר נחמד"
+      },
+      {
+        "file": "low/sting-bass.jpg",
+        "title": "סטינג"
+      },
+      {
+        "file": "low/strawberries.jpg",
+        "title": "תותים"
+      },
+      {
+        "file": "low/ted-lasso.jpg",
+        "title": "טד לאסו"
+      },
+      {
+        "file": "low/tiger.jpg",
+        "title": "נמר"
+      },
+      {
+        "file": "low/tigrina.jpg",
+        "title": "חתול טיגרינה (Leopardus tigrinus)"
+      },
+      {
+        "file": "low/tomatoes.jpg",
+        "title": "עגבניות"
+      },
+      {
+        "file": "low/tulips.jpg",
+        "title": "צבעונים"
+      },
+      {
+        "file": "low/wild-cats.jpg",
+        "title": "שנון (ליינקס)"
+      },
+      {
+        "file": "low/wildcat-cheetah.jpg",
+        "title": "ברדלס"
+      },
+      {
+        "file": "low/wildcat-ocelot.jpg",
+        "title": "אוצלוט"
+      },
+      {
+        "file": "low/wind-instruments.jpg",
+        "title": "כלי נשיפה"
+      },
+      {
+        "file": "low/yahli-sobol.jpg",
+        "title": "יהלי סובול"
+      },
+      {
+        "file": "low/yardena-arazi.jpg",
+        "title": "ירדנה ארזי"
+      },
+      {
+        "file": "low/yehudit-ravitz.jpg",
+        "title": "יהודית רביץ"
+      },
+      {
+        "file": "low/eyal-yonati.jpg",
+        "title": "איל יונתי"
+      }
     ]
   },
-  "tier2": {
+  "high": {
     "prizes": [
-      { "file": "tier2/placeholder.jpg", "title": "פרס לדוגמה — החליפי אותי!" }
-    ]
-  },
-  "tier3": {
-    "prizes": [
-      { "file": "tier3/placeholder.jpg", "title": "פרס לדוגמה — החליפי אותי!" }
-    ]
-  },
-  "tier4": {
-    "prizes": [
-      { "file": "tier4/placeholder.jpg", "title": "פרס לדוגמה — החליפי אותי!" }
+      {
+        "file": "high/netanel.jpg",
+        "title": "נתנאל"
+      },
+      {
+        "file": "high/berry.jpg",
+        "title": "ברי"
+      },
+      {
+        "file": "high/julian-cope.jpg",
+        "title": "ג׳וליאן קופ"
+      },
+      {
+        "file": "high/syd-barrett.jpg",
+        "title": "סיד בארט"
+      },
+      {
+        "file": "high/david-bowie.jpg",
+        "title": "דיויד בואי"
+      },
+      {
+        "file": "high/ketzef.jpg",
+        "title": "קצף"
+      },
+      {
+        "file": "high/shlulit.jpg",
+        "title": "שלולית"
+      },
+      {
+        "file": "high/shesek.jpg",
+        "title": "שסק"
+      },
+      {
+        "file": "high/mulan.jpg",
+        "title": "מולאן"
+      },
+      {
+        "file": "high/nunu.jpg",
+        "title": "נונו"
+      }
     ]
   }
 }

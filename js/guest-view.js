@@ -1,6 +1,6 @@
 import { auth, signOutUser } from "./firebase-init.js";
 import { getPrizeAwardsForHousehold, getCommentsForHousehold, addCommentToHousehold, getInvite } from "./db.js";
-import { getTierByKey } from "./prizes.js";
+import { streakPeriodLabel, streakRuleLabel } from "./prizes.js";
 
 let currentGrant = null;
 let listEl = null;
@@ -68,7 +68,6 @@ async function refresh() {
 }
 
 function renderAwardCard(award, awardComments) {
-  const tier = getTierByKey(award.tierKey);
   const commentsHtml = awardComments
     .slice()
     .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
@@ -90,7 +89,7 @@ function renderAwardCard(award, awardComments) {
         <img src="prizes/${award.prizeFile}" alt="" onerror="this.style.display='none'">
         <div class="info">
           <div class="title">${escapeHtml(award.prizeTitle)}</div>
-          <div class="sub">${tier ? tier.label : ""} · יום ${award.streakDay}</div>
+          <div class="sub">${streakPeriodLabel(award.streakDay)} · ${streakRuleLabel(award.streakDay)}</div>
         </div>
       </div>
       <div class="comments-list">${commentsHtml}</div>

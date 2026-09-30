@@ -48,7 +48,7 @@ async function setStreak(days) {
 function previewPrize(streakDay) {
   const tier = findMatchingTier(streakDay);
   if (!tier) {
-    console.log(`[test] Day ${streakDay} doesn't match any tier (3 / 7 / 30 / 180).`);
+    console.log(`[test] Day ${streakDay} doesn't match any tier (low: 3 / 7, high: 30 / 180).`);
     return;
   }
   const prize = pickRandomPrize(App.prizeManifest, tier.key);

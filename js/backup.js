@@ -14,7 +14,7 @@ export async function exportBackup() {
     try {
       const file = new File([blob], filename, { type: "application/json" });
       if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: "גיבוי רצף בזמן" });
+        await navigator.share({ files: [file], title: "גיבוי נעה בזמן" });
         return { method: "share" };
       }
     } catch (e) {

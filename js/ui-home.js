@@ -8,7 +8,7 @@ import {
   isLateExemptionAvailable,
 } from "./streak.js";
 import { celebrate } from "./confetti.js";
-import { evaluateAndAwardPrize, getTierByKey, daysUntilNextPrize } from "./prizes.js";
+import { evaluateAndAwardPrize, streakPeriodLabel, streakRuleLabel, daysUntilNextPrize } from "./prizes.js";
 import { App, refreshAll, showModal, hideModal } from "./app.js";
 
 let els = {};
@@ -209,7 +209,6 @@ export async function celebrateOnTimeCheckin(dateStr) {
 }
 
 export function showPrizeReveal(award) {
-  const tier = getTierByKey(award.tierKey);
   if (award.prizeFile) {
     els.revealImg.src = `prizes/${award.prizeFile}`;
     els.revealImg.style.display = "block";
@@ -219,7 +218,7 @@ export function showPrizeReveal(award) {
     els.revealPlaceholder.style.display = "flex";
     els.revealPlaceholder.textContent = "🎉";
   }
-  els.revealTitle.textContent = `זכית בפרס! (${tier ? tier.label : ""})`;
+  els.revealTitle.textContent = `זכית בפרס! ${streakPeriodLabel(award.streakDay)} (${streakRuleLabel(award.streakDay)})`;
   els.revealSub.textContent = award.prizeTitle;
   els.revealClose.textContent = "מעולה!";
   showModal(els.revealModal);
@@ -266,12 +265,11 @@ export function renderHome(app) {
 
   const active = app.prizeAwards[0];
   if (active) {
-    const tier = getTierByKey(active.tierKey);
     els.rewardCard.innerHTML = `
       <img src="prizes/${active.prizeFile}" alt="${escapeHtml(active.prizeTitle)}" onerror="this.style.display='none'">
       <div>
         <div class="reward-title">${escapeHtml(active.prizeTitle)}</div>
-        <div class="reward-sub">${tier ? tier.label : ""} · יום ${active.streakDay}</div>
+        <div class="reward-sub">${streakPeriodLabel(active.streakDay)} · ${streakRuleLabel(active.streakDay)}</div>
       </div>
     `;
   } else {

@@ -1,5 +1,5 @@
 import { App, refreshAll } from "./app.js";
-import { PRIZE_TIERS, getTierByKey, daysUntilNextPrize } from "./prizes.js";
+import { PRIZE_TIERS, streakPeriodLabel, streakRuleLabel, daysUntilNextPrize } from "./prizes.js";
 import { parseLocalDate } from "./streak.js";
 import { deleteMyComment } from "./db.js";
 
@@ -37,7 +37,6 @@ export function renderPrizes(app) {
     .map((a) => {
       const d = parseLocalDate(a.date);
       const dateLabel = d.toLocaleDateString("he-IL", { day: "numeric", month: "numeric", year: "numeric" });
-      const tier = getTierByKey(a.tierKey);
       const comments = app.commentsByAward.get(a.date) || [];
       const commentsHtml = comments
         .slice()
@@ -60,7 +59,7 @@ export function renderPrizes(app) {
           <img src="prizes/${a.prizeFile}" alt="" onerror="this.style.display='none'">
           <div class="info">
             <div class="title">${escapeHtml(a.prizeTitle)}</div>
-            <div class="sub">${tier ? tier.label : ""} · יום ${a.streakDay} · ${dateLabel}</div>
+            <div class="sub">${streakPeriodLabel(a.streakDay)} · ${streakRuleLabel(a.streakDay)} · ${dateLabel}</div>
           </div>
         </div>
         ${comments.length ? `<div class="comments-list">${commentsHtml}</div>` : ""}

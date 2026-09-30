@@ -4,14 +4,32 @@ import { savePrizeAward, deletePrizeAward } from "./db.js";
 // Ordered most to least significant, so the highest matching tier wins
 // on a day that happens to divide evenly into more than one of these.
 export const PRIZE_TIERS = [
-  { key: "tier4", intervalDays: 180, label: "חצי שנה רצופה!" },
-  { key: "tier3", intervalDays: 30, label: "30 ימים רצופים!" },
-  { key: "tier2", intervalDays: 7, label: "7 ימים רצופים!" },
-  { key: "tier1", intervalDays: 3, label: "3 ימים רצופים!" },
+  { key: "high", intervalDays: [30, 180], label: "פרס גדול" },
+  { key: "low", intervalDays: [3, 7], label: "פרס רגיל" },
 ];
 
+// Awards saved before the move to two tiers carry the old four keys.
+const LEGACY_TIER_KEYS = { tier1: "low", tier2: "low", tier3: "high", tier4: "high" };
+
 export function getTierByKey(key) {
-  return PRIZE_TIERS.find((t) => t.key === key) || null;
+  const k = LEGACY_TIER_KEYS[key] || key;
+  return PRIZE_TIERS.find((t) => t.key === k) || null;
+}
+
+// The streak an award was reached at, e.g. "63 ימים רצופים".
+export function streakPeriodLabel(streakDay) {
+  return streakDay === 180 ? "חצי שנה רצופה" : `${streakDay} ימים רצופים`;
+}
+
+// The milestone rule that triggered an award, e.g. day 63 -> "פרס על כל 3 ימים רצופים".
+// When several intervals in the tier divide the day, the smallest is stated,
+// except 180 which is always stated as the half-year milestone.
+export function streakRuleLabel(streakDay) {
+  const tier = findMatchingTier(streakDay);
+  if (!tier) return "";
+  if (streakDay % 180 === 0) return "פרס על כל חצי שנה רצופה";
+  const n = Math.min(...tier.intervalDays.filter((d) => streakDay % d === 0));
+  return `פרס על כל ${n} ימים רצופים`;
 }
 
 let manifestPromise = null;
@@ -27,7 +45,7 @@ export function loadPrizeManifest() {
 
 export function findMatchingTier(streakDay) {
   if (!streakDay || streakDay < 1) return null;
-  return PRIZE_TIERS.find((t) => streakDay % t.intervalDays === 0) || null;
+  return PRIZE_TIERS.find((t) => t.intervalDays.some((n) => streakDay % n === 0)) || null;
 }
 
 export function pickRandomPrize(manifest, tierKey) {
