@@ -51,7 +51,10 @@ body {
 #app {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  /* fixed + inset (not 100dvh): iOS standalone reports a dvh shorter than the
+     screen, which left a gap under the tab bar */
+  position: fixed;
+  inset: 0;
 }
 
 #app.hidden { display: none; }
@@ -93,7 +96,8 @@ body {
 
 .guest-screen {
   padding: calc(var(--safe-top) + 14px) 16px calc(20px + var(--safe-bottom));
-  height: 100dvh;
+  position: fixed;
+  inset: 0;
   overflow-y: auto;
 }
 
