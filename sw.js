@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v61";
+const CACHE_NAME = "ontime-streak-v62";
 const ASSETS = [
   "./",
   "./index.html",
@@ -25,6 +25,7 @@ const ASSETS = [
   "./js/ui-prizes.js",
   "./js/ui-settings.js",
   "./js/ui-invites.js",
+  "./js/calendar-sync.js",
   "./icons/icon-180.png",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

@@ -80,6 +80,12 @@ Neither of those revokes someone who already redeemed the link — their access 
 
 **Testing note:** `window.__test` commands only ever touch whichever admin account is currently signed in on *this* browser — see the note at the top of `js/devtools.js`. Just make sure that's you, not her.
 
+### Google Calendar sync (shifts)
+
+Settings → "סנכרון עם היומן" pulls timed events titled exactly `עבודע` (intentional spelling) from the signed-in admin's **primary** calendar, today and later, into shifts. Read-only toward Google (GET only, scope `calendar.readonly`, token requested via popup per tap and never stored). Calendar wins on the start time of a date; synced shifts (`source: "calendar"`) whose event disappeared are removed for today/future; manual shifts and past dates are never touched (editing a synced shift by hand makes it manual). All-day events are ignored; several events on one day → earliest.
+
+One-time setup: in Google Cloud Console for project `ontime-streak`, enable the **Google Calendar API** and add the `calendar.readonly` scope on the OAuth consent screen (add both admin emails as test users while unverified).
+
 ### Local preview and testing (desktop)
 
 ```bash

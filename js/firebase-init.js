@@ -5,6 +5,7 @@ import {
   signInWithPopup,
   signInAnonymously,
   signOut,
+  reauthenticateWithPopup,
 } from "./vendor/firebase-auth.js";
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from "./vendor/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
@@ -43,4 +44,15 @@ export function signOutUser() {
 // was added for the two admins.
 export function signInAsGuest() {
   return signInAnonymously(auth);
+}
+
+// Read-only Calendar access, requested on demand (per sync tap) rather than
+// at login so the everyday sign-in doesn't show a calendar consent screen.
+// The access token is short-lived and deliberately never stored.
+export async function getCalendarAccessToken() {
+  const provider = new GoogleAuthProvider();
+  provider.addScope("https://www.googleapis.com/auth/calendar.readonly");
+  provider.setCustomParameters({ login_hint: auth.currentUser.email });
+  const result = await reauthenticateWithPopup(auth.currentUser, provider);
+  return GoogleAuthProvider.credentialFromResult(result).accessToken;
 }
