@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v85";
+const CACHE_NAME = "ontime-streak-v86";
 const ASSETS = [
   "./",
   "./index.html",
@@ -94,7 +94,12 @@ const ASSETS = [
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting())
+    // cache:"reload" bypasses the HTTP cache. A plain addAll can be served
+    // stale copies (GitHub Pages sends max-age=600), which then get frozen
+    // into this version's cache and the app reports the previous version.
+    caches.open(CACHE_NAME)
+      .then((cache) => cache.addAll(ASSETS.map((url) => new Request(url, { cache: "reload" }))))
+      .then(() => self.skipWaiting())
   );
 });
 
