@@ -30,8 +30,11 @@
 
 html, body {
   overscroll-behavior: none;
-  overflow-x: hidden;
 }
+
+/* overflow-x on html only: with it on body too, Firefox stops scrolling the
+   page with the mouse wheel (arrow keys still worked). */
+html { overflow-x: hidden; }
 
 body {
   margin: 0;
