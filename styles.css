@@ -45,7 +45,7 @@ body {
   user-select: none;
 }
 
-#app {
+#app, #guest-view {
   display: flex;
   flex-direction: column;
   min-height: 100dvh;
@@ -88,10 +88,6 @@ body {
 
 #guest-view.hidden { display: none; }
 
-.guest-screen {
-  padding: calc(var(--safe-top) + 14px) 16px calc(20px + var(--safe-bottom));
-  min-height: 100dvh;
-}
 
 .comments-list {
   margin: 10px 0;

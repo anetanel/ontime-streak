@@ -233,6 +233,19 @@ export async function getPrizeAwardsForHousehold(householdId) {
   return getAllDocs(householdId, "prizeAwards");
 }
 
+export async function getCheckinsForHousehold(householdId) {
+  return getAllDocs(householdId, "checkins");
+}
+
+export async function getShiftsForHousehold(householdId) {
+  return getAllDocs(householdId, "shifts");
+}
+
+export async function getStreakStateForHousehold(householdId) {
+  const snap = await getDoc(householdDoc(householdId, "meta", "streakState"));
+  return snap.exists() ? snap.data() : { longestStreak: 0 };
+}
+
 export async function getCommentsForHousehold(householdId) {
   const snap = await getDocs(householdCollection(householdId, "comments"));
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));

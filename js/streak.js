@@ -113,6 +113,49 @@ export function isLateExemptionAvailable(checkinsByDate, shiftsByDate, dateStr) 
   return !scanStreaks(checkinsByDate, shiftsByDate, new Date(), 3650, dayBefore).exemptionUsed;
 }
 
+/**
+ * Share of scheduled days (up to today) that were on time. range is
+ * "week" (last 7 days), "month" (this calendar month) or "all" (since the
+ * first check-in). Today only counts once it has a check-in.
+ * Returns { pct, label } where pct is a rounded number or null if no data.
+ */
+export function onTimePercent(checkinsByDate, shiftsByDate, range, now = new Date()) {
+  const todayStr = formatLocalDate(now);
+  let start;
+  let label;
+
+  if (range === "week") {
+    start = new Date(now); start.setDate(start.getDate() - 6);
+    label = "אחוז בזמן (7 ימים)";
+  } else if (range === "month") {
+    start = new Date(now.getFullYear(), now.getMonth(), 1);
+    label = "אחוז בזמן (חודש)";
+  } else {
+    const dates = Array.from(checkinsByDate.keys()).sort();
+    start = dates.length ? parseLocalDate(dates[0]) : new Date(now);
+    label = "אחוז בזמן (מאז ומתמיד)";
+  }
+
+  let onTime = 0;
+  let total = 0;
+  const cursor = new Date(start);
+  while (formatLocalDate(cursor) <= todayStr) {
+    const dateStr = formatLocalDate(cursor);
+    if (isScheduledDay(dateStr, shiftsByDate)) {
+      const rec = checkinsByDate.get(dateStr);
+      if (rec) {
+        total += 1;
+        if (rec.status === "on-time") onTime += 1;
+      } else if (dateStr !== todayStr) {
+        total += 1;
+      }
+    }
+    cursor.setDate(cursor.getDate() + 1);
+  }
+
+  return { pct: total > 0 ? Math.round((onTime / total) * 100) : null, label };
+}
+
 // Ascending; `min` is the streak length at which the tier's star is earned.
 export const CELEBRATION_TIERS = [
   { key: "small", min: 1 },

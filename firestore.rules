@@ -62,6 +62,20 @@ service cloud.firestore {
       allow create: if isGuestOf(ownerId) && request.resource.data.authorUid == request.auth.uid;
     }
 
+    // Read-only for guests: the guest Home/Calendar pages compute the streak
+    // and show past on-time/late days from these. Writes stay owner-only.
+    match /households/{ownerId}/checkins/{date} {
+      allow read: if isOwner(ownerId) || isGuestOf(ownerId);
+    }
+
+    match /households/{ownerId}/shifts/{date} {
+      allow read: if isOwner(ownerId) || isGuestOf(ownerId);
+    }
+
+    match /households/{ownerId}/meta/{docId} {
+      allow read: if isOwner(ownerId) || isGuestOf(ownerId);
+    }
+
     match /households/{ownerId}/{document=**} {
       allow read, write: if isOwner(ownerId);
     }

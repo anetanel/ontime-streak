@@ -1,4 +1,4 @@
-import { formatLocalDate, parseLocalDate, isScheduledDay, isLateExemptionAvailable, snapToTimeOptions } from "./streak.js";
+import { formatLocalDate, parseLocalDate, isScheduledDay, isLateExemptionAvailable, snapToTimeOptions, onTimePercent } from "./streak.js";
 import { showModal, hideModal, refreshAll } from "./app.js";
 import { saveShift, deleteShift } from "./db.js";
 import { openArrivalTimeForm } from "./ui-home.js";
@@ -144,42 +144,9 @@ function classifyDay(app, dateStr, notYetResolved) {
 }
 
 function renderStats(app) {
-  const now = new Date();
-  const todayStr = formatLocalDate(now);
-  let start;
-  let label;
-
-  if (state.range === "week") {
-    start = new Date(now); start.setDate(start.getDate() - 6);
-    label = "אחוז בזמן (7 ימים)";
-  } else if (state.range === "month") {
-    start = new Date(now.getFullYear(), now.getMonth(), 1);
-    label = "אחוז בזמן (חודש)";
-  } else {
-    const dates = app.checkins.map((c) => c.date).sort();
-    start = dates.length ? parseLocalDate(dates[0]) : new Date(now);
-    label = "אחוז בזמן (מאז ומתמיד)";
-  }
-
-  let onTime = 0;
-  let total = 0;
-  const cursor = new Date(start);
-  while (formatLocalDate(cursor) <= todayStr) {
-    const dateStr = formatLocalDate(cursor);
-    if (isScheduledDay(dateStr, app.shiftsByDate)) {
-      const rec = app.checkinsByDate.get(dateStr);
-      if (rec) {
-        total += 1;
-        if (rec.status === "on-time") onTime += 1;
-      } else if (dateStr !== todayStr) {
-        total += 1;
-      }
-    }
-    cursor.setDate(cursor.getDate() + 1);
-  }
-
+  const { pct, label } = onTimePercent(app.checkinsByDate, app.shiftsByDate, state.range);
   els.pctLabel.textContent = label;
-  els.pct.textContent = total > 0 ? `${Math.round((onTime / total) * 100)}%` : "—";
+  els.pct.textContent = pct !== null ? `${pct}%` : "—";
 }
 
 function renderCalendar(app) {

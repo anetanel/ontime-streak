@@ -27,8 +27,9 @@
 </div>
 
 <div id="guest-view" class="hidden">
-  <div class="guest-screen">
-    <h1 class="topbar">פרסים של נעה בזמן</h1>
+
+  <section id="screen-guest-home" class="screen active">
+    <h1 class="topbar">נעה בזמן</h1>
 
     <div class="card account-card">
       <img id="guest-owner-photo" class="account-photo" src="" alt="" style="display:none;">
@@ -40,8 +41,82 @@
       <button class="btn btn-secondary" id="guest-signout-btn">יציאה</button>
     </div>
 
+    <div class="card">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="streak-flame">🔥</div>
+          <div class="stat-num" id="guest-current-streak">0</div>
+          <div class="stat-label">רצף נוכחי</div>
+        </div>
+        <div class="stat-box">
+          <div class="streak-flame">🏆</div>
+          <div class="stat-num" id="guest-longest-streak">0</div>
+          <div class="stat-label">השיא</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="tier-stars" id="guest-tier-stars"></div>
+      <div class="stat-label" style="text-align:center; margin-top:10px;">כל כוכב נפתח כשהרצף מגיע למספר הימים שמתחתיו, וחגיגה גדולה יותר מחכה בכל שלב.</div>
+    </div>
+  </section>
+
+  <section id="screen-guest-history" class="screen">
+    <h1 class="topbar">לוח שנה</h1>
+
+    <div class="card">
+      <div class="stat-row">
+        <div class="stat-box">
+          <div class="stat-num" id="guest-hist-current">0</div>
+          <div class="stat-label">נוכחי</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="guest-hist-longest">0</div>
+          <div class="stat-label">שיא</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-num" id="guest-hist-pct">0%</div>
+          <div class="stat-label" id="guest-hist-pct-label">אחוז בזמן (7 ימים)</div>
+        </div>
+      </div>
+      <div class="segmented" id="guest-pct-range-toggle">
+        <button data-range="week" class="active">שבוע</button>
+        <button data-range="month">חודש</button>
+        <button data-range="all">מאז ומתמיד</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="month-nav">
+        <button id="guest-cal-prev">›</button>
+        <h3 id="guest-cal-month-label" style="margin:0; text-transform:none; letter-spacing:normal; color:var(--text); font-size:15px; font-weight:600;">חודש</h3>
+        <button id="guest-cal-next">‹</button>
+      </div>
+      <div id="guest-cal-today-row" style="display:none; text-align:center; margin-bottom:6px;">
+        <button id="guest-cal-today-btn" class="cal-today-btn">חזרה להיום</button>
+      </div>
+      <div class="calendar-grid" id="guest-calendar-grid"></div>
+    </div>
+
+    <div class="card">
+      <div class="cal-legend">
+        <span><i class="cal-dot on-time"></i>בזמן</span>
+        <span><i class="cal-dot late"></i>איחור</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="screen-guest-prizes" class="screen">
+    <h1 class="topbar">פרסים</h1>
     <div id="guest-prizes-list"></div>
-  </div>
+  </section>
+
+  <nav class="tabbar">
+    <button data-screen="guest-home" class="active"><span class="icon">🏠</span>בית</button>
+    <button data-screen="guest-history"><span class="icon">📅</span>לוח שנה</button>
+    <button data-screen="guest-prizes"><span class="icon">🎵</span>פרסים</button>
+  </nav>
 </div>
 
 <div id="app" class="hidden">

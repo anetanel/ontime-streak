@@ -79,14 +79,18 @@ export function hideModal(el) {
 }
 
 function setupTabs() {
-  const buttons = document.querySelectorAll(".tabbar button");
-  buttons.forEach((btn) => {
-    btn.addEventListener("click", () => {
-      buttons.forEach((b) => b.classList.remove("active"));
-      btn.classList.add("active");
-      document.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
-      document.getElementById(`screen-${btn.dataset.screen}`).classList.add("active");
-      window.scrollTo(0, 0);
+  // Admin app and guest view each have their own tab bar and screens.
+  document.querySelectorAll(".tabbar").forEach((bar) => {
+    const root = bar.parentElement;
+    const buttons = bar.querySelectorAll("button");
+    buttons.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        buttons.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        root.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
+        document.getElementById(`screen-${btn.dataset.screen}`).classList.add("active");
+        window.scrollTo(0, 0);
+      });
     });
   });
 }
