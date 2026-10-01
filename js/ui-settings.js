@@ -55,7 +55,7 @@ const DEV_HINT_FROM = 4;
 const DEV_TAP_GAP_MS = 2000;
 
 let toastTimer = null;
-function showToast(text, ms = 1600) {
+export function showToast(text, ms = 1600) {
   let el = document.getElementById("toast");
   if (!el) {
     el = document.createElement("div");

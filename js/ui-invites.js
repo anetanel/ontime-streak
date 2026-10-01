@@ -1,6 +1,7 @@
 import { getMyInvites, createInvite, deleteInvite, getMyGuestGrants, revokeGuestGrant } from "./db.js";
 import { showModal, hideModal, App } from "./app.js";
 import { pick, normalizeGender } from "./gender.js";
+import { showToast } from "./ui-settings.js";
 
 let els = {};
 
@@ -64,6 +65,7 @@ async function refresh() {
     el.addEventListener("click", async () => {
       const ok = await copyToClipboard(inviteLink(el.dataset.id));
       if (ok) {
+        showToast("הקישור הועתק");
         const original = el.textContent;
         el.textContent = "✓";
         setTimeout(() => { el.textContent = original; }, 1500);
