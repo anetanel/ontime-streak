@@ -1,7 +1,7 @@
 import { auth, signInWithGoogle, signOutUser, signInAsGuest } from "./firebase-init.js";
 import { onAuthStateChanged } from "./vendor/firebase-auth.js";
 import { ADMIN_EMAILS } from "./firebase-config.js";
-import { getGuestGrant, getInvite, redeemInvite } from "./db.js";
+import { getGuestGrant, getInvite, redeemInvite, touchGuestGrant } from "./db.js";
 
 let els = {};
 let handlers = {};
@@ -57,6 +57,7 @@ async function handleAuthState(user) {
   if (user && user.isAnonymous) {
     const existingGrant = await getGuestGrant(user.uid);
     if (existingGrant) {
+      touchGuestGrant(user.uid).catch(() => {}); // best-effort; only feeds the admin's "last seen"
       showRole("guest", existingGrant);
       return;
     }

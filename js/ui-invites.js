@@ -90,8 +90,8 @@ function renderInviteRow(invite, guestGrants) {
   let status = pick(gender, "ממתין להצטרפות", "ממתינה להצטרפות");
   if (guestGrants.length) {
     const since = guestGrants.map((g) => g.grantedAt).sort()[0];
-    status = `${pick(gender, "מחובר", "מחוברת")} מאז ${formatDate(since)}`;
-    if (guestGrants.length > 1) status += ` · ${guestGrants.length} מכשירים`;
+    const lastSeen = guestGrants.map((g) => g.lastSeen || g.grantedAt).sort().pop();
+    status = `${pick(gender, "מחובר", "מחוברת")} מאז ${formatDate(since)} · ${pick(gender, "נראה", "נראית")} לאחרונה ${formatDate(lastSeen)}`;
   }
   const uids = guestGrants.map((g) => g.uid).join(",");
 

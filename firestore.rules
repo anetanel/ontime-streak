@@ -47,7 +47,9 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == uid
         && isActiveInviteFor(request.resource.data.invite, request.resource.data.householdId);
       allow read: if isAdmin() || (request.auth != null && request.auth.uid == uid);
-      allow update, delete: if isAdmin();
+      allow update: if isAdmin() || (request.auth != null && request.auth.uid == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["lastSeen"]));
+      allow delete: if isAdmin();
     }
 
     // Each admin's own household. Guests only ever see achievements and

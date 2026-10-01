@@ -226,7 +226,12 @@ export async function redeemInvite(inviteId, uid, label, householdId, gender) {
     label: label || "",
     gender: gender || "f",
     grantedAt: new Date().toISOString(),
+    lastSeen: new Date().toISOString(),
   });
+}
+
+export async function touchGuestGrant(uid) {
+  await updateDoc(doc(db, "guestGrants", uid), { lastSeen: new Date().toISOString() });
 }
 
 // --- Guest-facing reads: an explicit household, not "my own" ---
