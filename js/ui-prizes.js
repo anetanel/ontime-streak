@@ -36,7 +36,7 @@ export function renderPrizes(app) {
           (c) => `
             <div class="comment-item">
               <div class="comment-content">
-                <div><b>${escapeHtml(c.authorLabel || "אורחת")}:</b> ${escapeHtml(c.text)}</div>
+                <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
                 <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
               </div>
               <button class="icon-btn" data-delete-comment data-id="${c.id}" title="מחיקת תגובה">🗑️</button>

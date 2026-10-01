@@ -76,6 +76,7 @@ async function deleteCommentsForDate(householdId, date) {
 export const DEFAULT_SETTINGS = {
   id: "settings",
   soundEnabled: true,
+  gender: "f",
   themePreference: "system",
   lastBackupAt: null,
   createdAt: new Date().toISOString(),
@@ -218,11 +219,12 @@ export async function getGuestGrant(uid) {
   return snap.exists() ? snap.data() : null;
 }
 
-export async function redeemInvite(inviteId, uid, label, householdId) {
+export async function redeemInvite(inviteId, uid, label, householdId, gender) {
   await setDoc(doc(db, "guestGrants", uid), {
     invite: inviteId,
     householdId,
     label: label || "",
+    gender: gender || "f",
     grantedAt: new Date().toISOString(),
   });
 }
@@ -269,10 +271,11 @@ export async function getMyInvites() {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
-export async function createInvite(label) {
+export async function createInvite(label, gender) {
   const owner = auth.currentUser;
   const ref = await addDoc(collection(db, "invites"), {
     label: label || "",
+    gender: gender || "f",
     active: true,
     ownerId: myHouseholdId(),
     ownerName: owner.displayName || owner.email || "",

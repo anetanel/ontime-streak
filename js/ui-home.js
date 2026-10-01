@@ -11,6 +11,7 @@ import {
 import { celebrate } from "./confetti.js";
 import { evaluateAndAwardPrize, streakPeriodLabel, streakRuleLabel, milestoneLabel, daysUntilNextPrize, isHighAward } from "./prizes.js";
 import { App, refreshAll, showModal, hideModal } from "./app.js";
+import { pick } from "./gender.js";
 
 let els = {};
 let refreshOnRevealClose = false;
@@ -295,7 +296,7 @@ export function renderHome(app) {
       <div class="placeholder">🎵</div>
       <div>
         <div class="reward-title">עוד לא נפתח פרס</div>
-        <div class="reward-sub">תמשיכי ברצף!</div>
+        <div class="reward-sub">${pick(app.settings.gender, "תמשיך ברצף!", "תמשיכי ברצף!")}</div>
       </div>
     `;
   }

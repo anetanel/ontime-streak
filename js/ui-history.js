@@ -1,5 +1,6 @@
 import { formatLocalDate, parseLocalDate, isScheduledDay, isLateExemptionAvailable, snapToTimeOptions, onTimePercent } from "./streak.js";
-import { showModal, hideModal, refreshAll } from "./app.js";
+import { showModal, hideModal, refreshAll, App } from "./app.js";
+import { pick } from "./gender.js";
 import { saveShift, deleteShift } from "./db.js";
 import { openArrivalTimeForm } from "./ui-home.js";
 import { getCalendarAccessToken } from "./firebase-init.js";
@@ -85,10 +86,10 @@ export function initHistory() {
 
 async function handleCalendarSync() {
   els.calendarSyncBtn.disabled = true;
-  els.calendarSyncStatus.textContent = "מתחברת ליומן…";
+  els.calendarSyncStatus.textContent = pick(App.settings.gender, "מתחבר ליומן…", "מתחברת ליומן…");
   try {
     const token = await getCalendarAccessToken();
-    els.calendarSyncStatus.textContent = "מסנכרנת…";
+    els.calendarSyncStatus.textContent = pick(App.settings.gender, "מסנכרן…", "מסנכרנת…");
     const { added, updated, removed } = await syncShifts(token);
     await refreshAll();
     els.calendarSyncStatus.textContent =
@@ -98,7 +99,7 @@ async function handleCalendarSync() {
   } catch (err) {
     console.error("calendar sync failed:", err);
     const closed = err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request";
-    els.calendarSyncStatus.textContent = closed ? "הסנכרון בוטל." : "הסנכרון נכשל. בדקי חיבור לאינטרנט ונסי שוב.";
+    els.calendarSyncStatus.textContent = closed ? "הסנכרון בוטל." : pick(App.settings.gender, "הסנכרון נכשל. בדוק חיבור לאינטרנט ונסה שוב.", "הסנכרון נכשל. בדקי חיבור לאינטרנט ונסי שוב.");
   } finally {
     els.calendarSyncBtn.disabled = false;
   }

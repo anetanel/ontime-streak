@@ -3,6 +3,7 @@ import { App, refreshAll, checkForUpdatesNow } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
 import { APP_VERSION } from "./version.js";
 import { auth, signOutUser } from "./firebase-init.js";
+import { pick, normalizeGender, applyGenderText } from "./gender.js";
 
 let els = {};
 let saveTimer = null;
@@ -29,6 +30,13 @@ export function initSettings() {
   els.accountSignoutBtn.addEventListener("click", () => signOutUser());
 
   els.sound.addEventListener("change", debounceSaveSettings);
+  els.genderToggle = document.getElementById("gender-toggle");
+  els.genderToggle.addEventListener("click", async (e) => {
+    const btn = e.target.closest("button[data-gender]");
+    if (!btn) return;
+    await saveSettings({ ...App.settings, gender: btn.dataset.gender });
+    await refreshAll();
+  });
 
   els.exportBtn.addEventListener("click", handleExport);
   els.importBtn.addEventListener("click", () => els.importFile.click());
@@ -163,7 +171,7 @@ function initDeveloperMode() {
 }
 
 async function handleCheckForUpdates() {
-  els.checkUpdateStatus.textContent = "בודקת עדכון…";
+  els.checkUpdateStatus.textContent = pick(App.settings.gender, "בודק עדכון…", "בודקת עדכון…");
   const registration = await checkForUpdatesNow();
 
   if (!registration) {
@@ -171,7 +179,7 @@ async function handleCheckForUpdates() {
     return;
   }
   if (registration.installing || registration.waiting) {
-    els.checkUpdateStatus.textContent = "נמצא עדכון — מתקינה, האפליקציה תיטען מחדש...";
+    els.checkUpdateStatus.textContent = pick(App.settings.gender, "נמצא עדכון — מתקין, האפליקציה תיטען מחדש...", "נמצא עדכון — מתקינה, האפליקציה תיטען מחדש...");
     return;
   }
   els.checkUpdateStatus.textContent = `האפליקציה כבר מעודכנת (גרסה ${APP_VERSION}).`;
@@ -246,6 +254,9 @@ async function handleReset() {
 
 export function renderSettings(app) {
   els.sound.checked = app.settings.soundEnabled;
+  const gender = normalizeGender(app.settings.gender);
+  [...els.genderToggle.children].forEach((b) => b.classList.toggle("active", b.dataset.gender === gender));
+  applyGenderText(document.getElementById("app"), gender);
 
   if (app.settings.lastBackupAt) {
     const d = new Date(app.settings.lastBackupAt);
@@ -260,6 +271,6 @@ export function renderSettings(app) {
   } else {
     els.lastBackupLabel.textContent = "עדיין לא בוצע גיבוי";
     els.banner.style.display = "block";
-    els.banner.textContent = "גבי את הנתונים שלך כדי שלא לאבד את היסטוריית הרצף.";
+    els.banner.textContent = pick(app.settings.gender, "גבה את הנתונים שלך כדי שלא לאבד את היסטוריית הרצף.", "גבי את הנתונים שלך כדי שלא לאבד את היסטוריית הרצף.");
   }
 }

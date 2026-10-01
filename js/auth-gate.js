@@ -22,11 +22,11 @@ export function initAuthGate({ onAdmin, onGuest }) {
   els.signoutBtn = document.getElementById("google-signout-btn");
 
   els.signinBtn.addEventListener("click", () => {
-    els.status.textContent = "מעבירה להתחברות עם Google…";
+    els.status.textContent = "מעבר להתחברות עם Google…";
     els.signinBtn.disabled = true;
     signInWithGoogle().catch((err) => {
       console.error("signInWithGoogle failed:", err);
-      els.status.textContent = "ההתחברות נכשלה. נסי שוב.";
+      els.status.textContent = "ההתחברות נכשלה. אפשר לנסות שוב.";
       els.signinBtn.disabled = false;
     });
   });
@@ -36,7 +36,7 @@ export function initAuthGate({ onAdmin, onGuest }) {
   onAuthStateChanged(auth, (user) => {
     handleAuthState(user).catch((err) => {
       console.error("Auth flow failed:", err);
-      showGate({ message: "משהו השתבש בהתחברות. נסי לרענן את הדף.", showSignin: true, showSignout: false });
+      showGate({ message: "משהו השתבש בהתחברות. כדאי לרענן את הדף.", showSignin: true, showSignout: false });
     });
   });
 }
@@ -87,7 +87,7 @@ async function handleAuthState(user) {
 async function tryRedeemInvite(inviteId, uid) {
   const invite = await getInvite(inviteId);
   if (!invite || !invite.active || !invite.ownerId) return null;
-  await redeemInvite(inviteId, uid, invite.label || "", invite.ownerId);
+  await redeemInvite(inviteId, uid, invite.label || "", invite.ownerId, invite.gender);
   return getGuestGrant(uid);
 }
 

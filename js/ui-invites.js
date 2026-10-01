@@ -1,5 +1,6 @@
 import { getMyInvites, createInvite, deleteInvite, getMyGuestGrants, revokeGuestGrant } from "./db.js";
-import { showModal, hideModal } from "./app.js";
+import { showModal, hideModal, App } from "./app.js";
+import { pick, normalizeGender } from "./gender.js";
 
 let els = {};
 
@@ -18,6 +19,12 @@ export function initInvites() {
   });
   els.closeBtn.addEventListener("click", () => hideModal(els.modal));
   els.createBtn.addEventListener("click", handleCreate);
+  els.genderToggle = document.getElementById("invite-gender-toggle");
+  els.genderToggle.addEventListener("click", (e) => {
+    const btn = e.target.closest("button[data-gender]");
+    if (!btn) return;
+    [...els.genderToggle.children].forEach((b) => b.classList.toggle("active", b === btn));
+  });
 }
 
 function inviteLink(id) {
@@ -29,7 +36,7 @@ async function copyToClipboard(text) {
     await navigator.clipboard.writeText(text);
     return true;
   } catch (e) {
-    prompt("העתיקי את הקישור:", text);
+    prompt(pick(App.settings.gender, "העתק את הקישור:", "העתיקי את הקישור:"), text);
     return false;
   }
 }
@@ -79,10 +86,11 @@ async function refresh() {
 }
 
 function renderInviteRow(invite, guestGrants) {
-  let status = "ממתינה להצטרפות";
+  const gender = invite.gender;
+  let status = pick(gender, "ממתין להצטרפות", "ממתינה להצטרפות");
   if (guestGrants.length) {
     const since = guestGrants.map((g) => g.grantedAt).sort()[0];
-    status = `מחוברת מאז ${formatDate(since)}`;
+    status = `${pick(gender, "מחובר", "מחוברת")} מאז ${formatDate(since)}`;
     if (guestGrants.length > 1) status += ` · ${guestGrants.length} מכשירים`;
   }
   const uids = guestGrants.map((g) => g.uid).join(",");
@@ -107,7 +115,8 @@ async function handleCreate() {
   const label = els.labelInput.value.trim();
   els.createBtn.disabled = true;
   try {
-    const id = await createInvite(label);
+    const gender = els.genderToggle.querySelector(".active").dataset.gender;
+    const id = await createInvite(label, gender);
     els.labelInput.value = "";
     await refresh();
     const ok = await copyToClipboard(inviteLink(id));

@@ -20,7 +20,7 @@
   <div class="auth-card">
     <div class="auth-logo">🔥</div>
     <h1>נעה בזמן</h1>
-    <p id="auth-status" class="stat-label">מתחברת…</p>
+    <p id="auth-status" class="stat-label">מתבצעת התחברות…</p>
     <button id="google-signin-btn" class="btn btn-primary" style="display:none;">התחברות עם Google</button>
     <button id="google-signout-btn" class="btn btn-secondary" style="display:none;">התנתקות</button>
   </div>
@@ -154,7 +154,7 @@
       <div class="placeholder">🎵</div>
       <div>
         <div class="reward-title">עוד לא נפתח פרס</div>
-        <div class="reward-sub">תמשיכי ברצף!</div>
+        <div class="reward-sub">להמשיך ברצף!</div>
       </div>
     </div>
     <div class="stat-label" id="home-next-prize" style="text-align:center; margin-top:-6px; margin-bottom:14px;"></div>
@@ -204,7 +204,7 @@
         <span><i class="cal-dot missed"></i>אין משמרת</span>
         <span><i class="cal-dot future-shift"></i>משמרת עתידית</span>
       </div>
-      <div class="stat-label">הקישי על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו.</div>
+      <div class="stat-label"><span data-m="הקש על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו." data-f="הקישי על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו.">הקישי על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו.</span></div>
     </div>
     <div class="card">
       <div class="stat-label" style="margin-bottom:10px;">מייבא משמרות מאירועים בשם "עבודע" ביומן Google, מהיום והלאה. קריאה בלבד — היומן לא משתנה.</div>
@@ -254,6 +254,14 @@
         <div id="account-email" class="stat-label"></div>
       </div>
       <button class="btn btn-secondary" id="account-signout-btn">התנתקות</button>
+    </div>
+
+    <div class="card">
+      <h3>לשון פנייה</h3>
+      <div class="segmented" id="gender-toggle">
+        <button data-gender="f" class="active">לשון נקבה</button>
+        <button data-gender="m">לשון זכר</button>
+      </div>
     </div>
 
     <div class="card">
@@ -397,6 +405,10 @@
     <div class="field">
       <label for="invite-label-input">שם האורחת/האורח</label>
       <input type="text" id="invite-label-input" placeholder="לדוגמה: דנה" maxlength="60">
+    </div>
+    <div class="segmented" id="invite-gender-toggle" style="margin-bottom:10px;">
+      <button data-gender="f" class="active">אורחת</button>
+      <button data-gender="m">אורח</button>
     </div>
     <button class="btn btn-primary" id="invite-create-btn">יצירת הזמנה</button>
     <div id="invites-list"></div>

@@ -8,6 +8,7 @@ import {
   getStreakStateForHousehold,
   getInvite,
 } from "./db.js";
+import { pick } from "./gender.js";
 import { streakPeriodLabel, streakRuleLabel, isHighAward } from "./prizes.js";
 import {
   CELEBRATION_TIERS,
@@ -134,7 +135,7 @@ async function renderHeader() {
   const viewerLabelEl = document.getElementById("guest-viewer-label");
   const signoutBtn = document.getElementById("guest-signout-btn");
 
-  viewerLabelEl.textContent = currentGrant.label ? `מחוברת בתור ${currentGrant.label}` : "";
+  viewerLabelEl.textContent = currentGrant.label ? `${pick(currentGrant.gender, "מחובר", "מחוברת")} בתור ${currentGrant.label}` : "";
   signoutBtn.onclick = () => signOutUser();
 
   const invite = await getInvite(currentGrant.invite).catch(() => null);
@@ -189,7 +190,7 @@ function renderAwardCard(award, awardComments) {
       (c) => `
         <div class="comment-item">
           <div class="comment-content">
-            <div><b>${escapeHtml(c.authorLabel || "אורחת")}:</b> ${escapeHtml(c.text)}</div>
+            <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
             <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
           </div>
         </div>
@@ -208,7 +209,7 @@ function renderAwardCard(award, awardComments) {
       </div>
       <div class="comments-list">${commentsHtml}</div>
       <form class="comment-form" data-comment-form data-award-date="${award.date}">
-        <input type="text" class="comment-input" placeholder="השאירי ברכה…" required maxlength="300">
+        <input type="text" class="comment-input" placeholder="${pick(currentGrant.gender, "השאר ברכה…", "השאירי ברכה…")}" required maxlength="300">
         <button type="submit" class="btn btn-primary">שליחה</button>
       </form>
     </div>
@@ -229,13 +230,13 @@ async function handleCommentSubmit(e) {
       householdId: currentGrant.householdId,
       prizeAwardDate: form.dataset.awardDate,
       authorUid: auth.currentUser.uid,
-      authorLabel: currentGrant.label || "אורחת",
+      authorLabel: currentGrant.label || pick(currentGrant.gender, "אורח", "אורחת"),
       text,
     });
     await refresh();
   } catch (err) {
     console.error("addComment failed:", err);
-    alert("שליחת התגובה נכשלה. נסי שוב.");
+    alert(pick(currentGrant.gender, "שליחת התגובה נכשלה. נסה שוב.", "שליחת התגובה נכשלה. נסי שוב."));
     btn.disabled = false;
   }
 }
