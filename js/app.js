@@ -182,9 +182,9 @@ function boot() {
   registerServiceWorker();
   initAuthGate({
     onAdmin: bootApp,
-    onGuest: () => {
+    onGuest: (grant) => {
       initPullToRefresh(async () => window.location.reload());
-      return renderGuestView();
+      return renderGuestView(grant);
     },
   });
 }
