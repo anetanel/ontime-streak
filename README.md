@@ -40,6 +40,7 @@ const CACHE_NAME = "ontime-streak-v30"; // increment this
 
 // js/version.js
 export const APP_VERSION = "30"; // ...and this, to the same number
+export const APP_BUILD_TIME = "2026-01-01 12:00"; // ...and the current date/time
 ```
 
 Bumping `CACHE_NAME` is what makes her already-installed app fetch the new version next time she opens it with an internet connection — otherwise the service worker keeps serving the old cached files indefinitely. `APP_VERSION` shows up at the bottom of the Settings screen in the app, so you can ask her what number she sees to confirm she's on the version you just shipped, without needing to describe UI changes over text.

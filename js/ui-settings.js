@@ -1,7 +1,7 @@
 import { saveSettings, resetAllData } from "./db.js";
 import { App, refreshAll, checkForUpdatesNow } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
-import { APP_VERSION } from "./version.js";
+import { APP_VERSION, APP_BUILD_TIME } from "./version.js";
 import { auth, signOutUser } from "./firebase-init.js";
 import { pick, normalizeGender, applyGenderText } from "./gender.js";
 
@@ -22,7 +22,7 @@ export function initSettings() {
   els.lastBackupLabel = document.getElementById("last-backup-label");
   els.resetBtn = document.getElementById("reset-btn");
   els.version = document.getElementById("app-version");
-  els.version.textContent = APP_VERSION;
+  els.version.textContent = `${APP_VERSION} · ${APP_BUILD_TIME}`;
   els.checkUpdateBtn = document.getElementById("check-update-btn");
   els.checkUpdateStatus = document.getElementById("check-update-status");
 

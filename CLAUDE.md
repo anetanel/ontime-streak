@@ -15,7 +15,7 @@ A Hebrew/RTL iPhone PWA habit tracker ("On-Time Streak"): tap "I'm at Work", bui
 
 ## Mandatory on every change to loaded files
 
-Bump `CACHE_NAME` in `sw.js` (`ontime-streak-vN`) **and** `APP_VERSION` in `js/version.js` to the same number N. Otherwise installed apps keep serving the old cache. Also add any new file the app loads to the `ASSETS` list in `sw.js` (it is precached explicitly, including prize images).
+Bump `CACHE_NAME` in `sw.js` (`ontime-streak-vN`) **and** `APP_VERSION` in `js/version.js` to the same number N, and set `APP_BUILD_TIME` (same file) to the current local date and time (`date '+%Y-%m-%d %H:%M'`). Otherwise installed apps keep serving the old cache. Also add any new file the app loads to the `ASSETS` list in `sw.js` (it is precached explicitly, including prize images).
 
 ## Architecture
 
