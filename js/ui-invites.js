@@ -91,7 +91,7 @@ function renderInviteRow(invite, guestGrants) {
   if (guestGrants.length) {
     const since = guestGrants.map((g) => g.grantedAt).sort()[0];
     const lastSeen = guestGrants.map((g) => g.lastSeen || g.grantedAt).sort().pop();
-    status = `${pick(gender, "מחובר", "מחוברת")} מאז ${formatDate(since)} · ${pick(gender, "נראה", "נראית")} לאחרונה ${formatDate(lastSeen)}`;
+    status = `${pick(gender, "מחובר", "מחוברת")} מאז ${formatDate(since)} · ${pick(gender, "נראה", "נראתה")} לאחרונה ${formatDate(lastSeen)}`;
   }
   const uids = guestGrants.map((g) => g.uid).join(",");
 
