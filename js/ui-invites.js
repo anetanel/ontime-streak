@@ -113,6 +113,11 @@ function formatDate(iso) {
 
 async function handleCreate() {
   const label = els.labelInput.value.trim();
+  if (!label) {
+    alert("יש להזין שם לאורח.");
+    els.labelInput.focus();
+    return;
+  }
   els.createBtn.disabled = true;
   try {
     const gender = els.genderToggle.querySelector(".active").dataset.gender;
