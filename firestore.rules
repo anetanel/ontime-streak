@@ -59,15 +59,23 @@ service cloud.firestore {
       allow read: if isOwner(ownerId) || isGuestOf(ownerId);
     }
 
+    function onlyOwnReaction(field) {
+      let before = resource.data.get(field, {});
+      let after = request.resource.data.get(field, {});
+      return after.diff(before).affectedKeys().hasOnly([request.auth.uid])
+        && after.get(request.auth.uid, true) == true;
+    }
+
     match /households/{ownerId}/comments/{commentId} {
       allow read: if isOwner(ownerId) || isGuestOf(ownerId);
       allow create: if isGuestOf(ownerId) && request.resource.data.authorUid == request.auth.uid;
-      // A guest may only add or remove their own entry in the likes map
-      // (likes: {voterUid: true}); the owner can already write everything.
+      // A guest may only add or remove their own entry in the likes (hearts)
+      // and thumbs maps ({voterUid: true}); the owner can already write
+      // everything.
       allow update: if isGuestOf(ownerId)
-        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["likes"])
-        && request.resource.data.get("likes", {}).diff(resource.data.get("likes", {})).affectedKeys().hasOnly([request.auth.uid])
-        && request.resource.data.get("likes", {}).get(request.auth.uid, true) == true;
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(["likes", "thumbs"])
+        && onlyOwnReaction("likes")
+        && onlyOwnReaction("thumbs");
     }
 
     // Read-only for guests: the guest Home/Calendar pages compute the streak

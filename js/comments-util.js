@@ -1,5 +1,5 @@
 import { auth } from "./firebase-init.js";
-import { setCommentLike } from "./db.js";
+import { setCommentReaction } from "./db.js";
 import { computeStreak, formatLocalDate, parseLocalDate, isScheduledDay } from "./streak.js";
 
 export function escapeHtml(str) {
@@ -54,37 +54,59 @@ export function dayStatusLabel(status) {
   return DAY_STATUS_LABELS[status] || "";
 }
 
-/** Heart button with the like count; filled when the signed-in user has liked it. */
+// likes = hearts (the original field), thumbs = thumbs-up; independent maps.
+const REACTIONS = {
+  likes: { on: "❤️", off: "🤍", title: "לב" },
+  thumbs: { on: "👍", off: "👍", title: "לייק" },
+};
+
+/** Heart and thumbs-up buttons with counts; filled when the signed-in user has reacted. */
 export function likeButtonHtml(c) {
-  const likes = c.likes || {};
-  const count = Object.keys(likes).length;
-  const mine = !!likes[auth.currentUser?.uid];
-  return `<button class="like-btn${mine ? " liked" : ""}" data-like-comment data-id="${c.id}" title="לייק">${mine ? "❤️" : "🤍"}${count ? ` <span>${count}</span>` : ""}</button>`;
+  const uid = auth.currentUser?.uid;
+  return Object.entries(REACTIONS)
+    .map(([kind, r]) => {
+      const map = c[kind] || {};
+      const count = Object.keys(map).length;
+      const mine = !!map[uid];
+      return `<button class="like-btn${mine ? " liked" : ""}" data-like-comment data-kind="${kind}" data-id="${c.id}" title="${r.title}">${mine ? r.on : r.off}${count ? ` <span>${count}</span>` : ""}</button>`;
+    })
+    .join("");
+}
+
+/** Subtle line naming the owner's own reactions on a comment, "" if none. */
+export function adminReactionHtml(c, ownerId, ownerName) {
+  const icons = Object.entries(REACTIONS)
+    .filter(([kind]) => c[kind]?.[ownerId])
+    .map(([, r]) => r.on)
+    .join(" ");
+  return icons ? `<div class="comment-admin-react">${icons} ${escapeHtml(ownerName || "")}</div>` : "";
 }
 
 /**
- * Toggles the signed-in user's like optimistically on the comment object,
- * calls rerender(), then saves; reverts and rerenders if the save fails.
+ * Toggles the signed-in user's reaction optimistically on the comment
+ * object, calls rerender(), then saves; reverts and rerenders if the save
+ * fails.
  */
 export function wireLikeButtons(root, comments, householdId, rerender) {
   root.querySelectorAll("[data-like-comment]").forEach((btn) => {
     btn.addEventListener("click", async () => {
+      const kind = btn.dataset.kind;
       const c = comments.find((x) => x.id === btn.dataset.id);
-      if (!c) return;
+      if (!c || !REACTIONS[kind]) return;
       const uid = auth.currentUser.uid;
-      const before = c.likes;
+      const before = c[kind];
       const liked = !(before && before[uid]);
-      c.likes = { ...(before || {}) };
-      if (liked) c.likes[uid] = true;
-      else delete c.likes[uid];
+      c[kind] = { ...(before || {}) };
+      if (liked) c[kind][uid] = true;
+      else delete c[kind][uid];
       rerender();
       try {
-        await setCommentLike(householdId, c.id, liked);
+        await setCommentReaction(householdId, c.id, kind, liked);
       } catch (err) {
-        console.error("setCommentLike failed:", err);
-        c.likes = before;
+        console.error("setCommentReaction failed:", err);
+        c[kind] = before;
         rerender();
-        alert("הלייק לא נשמר.");
+        alert("התגובה לא נשמרה.");
       }
     });
   });

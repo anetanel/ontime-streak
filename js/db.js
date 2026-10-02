@@ -129,12 +129,14 @@ export async function markCommentsRead(commentIds) {
   }
 }
 
-// likes is a map of voter uid -> true, so each person's like is one field
-// they can set or remove without touching anyone else's (see firestore.rules).
-export async function setCommentLike(householdId, commentId, liked) {
+// Reactions are maps of voter uid -> true: `likes` holds the hearts and
+// `thumbs` the thumbs-up, tracked independently. Each person's reaction is
+// one field they can set or remove without touching anyone else's (see
+// firestore.rules).
+export async function setCommentReaction(householdId, commentId, kind, liked) {
   const uid = auth.currentUser.uid;
   await updateDoc(householdDoc(householdId, "comments", commentId), {
-    [`likes.${uid}`]: liked ? true : deleteField(),
+    [`${kind}.${uid}`]: liked ? true : deleteField(),
   });
 }
 

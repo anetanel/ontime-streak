@@ -10,7 +10,7 @@ import {
   getInvite,
 } from "./db.js";
 import { pick } from "./gender.js";
-import { escapeHtml, formatCommentTime, dayCommentInfo, dayCommentMetaLabel, likeButtonHtml, wireLikeButtons } from "./comments-util.js";
+import { escapeHtml, formatCommentTime, dayCommentInfo, dayCommentMetaLabel, likeButtonHtml, adminReactionHtml, wireLikeButtons } from "./comments-util.js";
 import { streakPeriodLabel, streakRuleLabel, isHighAward } from "./prizes.js";
 import {
   CELEBRATION_TIERS,
@@ -27,6 +27,8 @@ let checkinsByDate = new Map();
 let shiftsByDate = new Map();
 let commentsByDay = new Map();
 let awardComments = [];
+let awardsCache = [];
+let ownerName = "";
 let openDay = null;
 let calState = { year: new Date().getFullYear(), month: new Date().getMonth(), range: "week" };
 let wired = false;
@@ -180,6 +182,7 @@ function dayCommentsHtml(dateStr) {
             <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
             ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
             <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
+            ${adminReactionHtml(c, currentGrant.householdId, ownerName)}
           </div>
           ${likeButtonHtml(c)}
         </div>`;
@@ -289,10 +292,14 @@ async function renderHeader() {
   signoutBtn.onclick = () => signOutUser();
 
   const invite = await getInvite(currentGrant.invite).catch(() => null);
-  const ownerName = invite && invite.ownerName;
+  ownerName = (invite && invite.ownerName) || "";
   const ownerPhotoURL = invite && invite.ownerPhotoURL;
 
-  ownerNameEl.textContent = ownerName || "";
+  ownerNameEl.textContent = ownerName;
+  // Comments may have rendered before the name arrived.
+  renderTodayComments();
+  if (openDay) renderDayModalComments();
+  if (awardsCache.length) renderPrizes(awardsCache);
 
   if (ownerPhotoURL) {
     photo.src = ownerPhotoURL;
@@ -316,6 +323,7 @@ async function refresh() {
   awards.sort((a, b) => (a.date < b.date ? 1 : -1));
 
   awardComments = comments.filter((c) => c.prizeAwardDate);
+  awardsCache = awards;
   renderPrizes(awards);
 }
 
@@ -379,6 +387,7 @@ function renderAwardComments(award, awardComments) {
           <div class="comment-content">
             <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
             <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
+            ${adminReactionHtml(c, currentGrant.householdId, ownerName)}
           </div>
           ${likeButtonHtml(c)}
         </div>
