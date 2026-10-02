@@ -110,7 +110,47 @@ async function loadStats() {
 
   renderPct();
   renderCalendar();
+  renderTodayStatus(now);
   document.getElementById("guest-comment-today-btn").disabled = false;
+}
+
+// Worded neutrally: the grant only knows the guest's gender, not the owner's.
+function renderTodayStatus(now) {
+  const card = document.getElementById("guest-today-status");
+  const todayStr = formatLocalDate(now);
+  const shift = shiftsByDate.get(todayStr);
+  const checkin = checkinsByDate.get(todayStr);
+  let icon, title, sub = "";
+
+  if (!shift) {
+    icon = "🌴";
+    title = "אין משמרת היום";
+  } else if (checkin) {
+    sub = `התחלת משמרת: ${shift.startTime}`;
+    if (checkin.status === "on-time") {
+      icon = "✅";
+      title = "הגעה בזמן";
+    } else {
+      icon = "⏰";
+      title = checkin.minutesLate ? `איחור של ${checkin.minutesLate} דקות` : "איחור";
+    }
+  } else {
+    const [h, m] = shift.startTime.split(":").map(Number);
+    const started = now.getTime() > new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
+    sub = `התחלת משמרת: ${shift.startTime}`;
+    if (started) {
+      icon = "⏰";
+      title = "המשמרת התחילה, ועדיין אין הגעה";
+    } else {
+      icon = "🕒";
+      title = "יש משמרת היום, עדיין לא התחילה";
+    }
+  }
+
+  document.getElementById("guest-today-status-icon").textContent = icon;
+  document.getElementById("guest-today-status-title").textContent = title;
+  document.getElementById("guest-today-status-sub").textContent = sub;
+  card.style.display = "";
 }
 
 function renderPct() {
