@@ -330,6 +330,15 @@ export async function getMyGuestGrants() {
   return snap.docs.map((d) => ({ uid: d.id, ...d.data() }));
 }
 
+// The invite's gender seeds future grants; each existing grant keeps its own
+// copy (one per anonymous login), so all of them are updated together.
+export async function setGuestGender(inviteId, uids, gender) {
+  await updateDoc(doc(db, "invites", inviteId), { gender });
+  for (const uid of uids) {
+    await updateDoc(doc(db, "guestGrants", uid), { gender });
+  }
+}
+
 export async function revokeGuestGrant(uid) {
   await deleteDoc(doc(db, "guestGrants", uid));
 }

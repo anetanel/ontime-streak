@@ -1,4 +1,4 @@
-import { getMyInvites, createInvite, deleteInvite, getMyGuestGrants, revokeGuestGrant } from "./db.js";
+import { getMyInvites, createInvite, deleteInvite, getMyGuestGrants, revokeGuestGrant, setGuestGender } from "./db.js";
 import { showModal, hideModal, App } from "./app.js";
 import { pick, normalizeGender } from "./gender.js";
 import { showToast } from "./ui-settings.js";
@@ -73,6 +73,20 @@ async function refresh() {
     });
   });
 
+  els.list.querySelectorAll("[data-toggle-gender]").forEach((el) => {
+    el.addEventListener("click", async () => {
+      el.disabled = true;
+      try {
+        const next = normalizeGender(el.dataset.gender) === "m" ? "f" : "m";
+        await setGuestGender(el.dataset.id, el.dataset.uids.split(",").filter(Boolean), next);
+      } catch (err) {
+        console.error("setGuestGender failed:", err);
+        alert("עדכון הלשון נכשל.");
+      }
+      await refresh();
+    });
+  });
+
   els.list.querySelectorAll("[data-delete-invite]").forEach((el) => {
     el.addEventListener("click", async () => {
       if (!confirm("להסיר את האורח/ת? הקישור יפסיק לעבוד והגישה תבוטל מיד.")) return;
@@ -103,6 +117,7 @@ function renderInviteRow(invite, guestGrants) {
         <div class="invite-label">${escapeHtml(invite.label || "ללא שם")}</div>
         <div class="stat-label">${status}</div>
       </div>
+      <button class="icon-btn" data-toggle-gender data-id="${invite.id}" data-gender="${normalizeGender(gender)}" data-uids="${uids}" title="החלפת לשון">${pick(gender, "אורח", "אורחת")}</button>
       <button class="icon-btn" data-copy-link data-id="${invite.id}" title="העתקת קישור">🔗</button>
       <button class="icon-btn" data-delete-invite data-id="${invite.id}" data-uids="${uids}" title="הסרה">🗑️</button>
     </div>
