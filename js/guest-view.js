@@ -10,7 +10,7 @@ import {
   getInvite,
 } from "./db.js";
 import { pick } from "./gender.js";
-import { escapeHtml, formatCommentTime, dayCommentInfo, dayCommentMetaLabel } from "./comments-util.js";
+import { escapeHtml, formatCommentTime, dayCommentInfo, dayCommentMetaLabel, likeButtonHtml, wireLikeButtons } from "./comments-util.js";
 import { streakPeriodLabel, streakRuleLabel, isHighAward } from "./prizes.js";
 import {
   CELEBRATION_TIERS,
@@ -26,6 +26,7 @@ let listEl = null;
 let checkinsByDate = new Map();
 let shiftsByDate = new Map();
 let commentsByDay = new Map();
+let awardComments = [];
 let openDay = null;
 let calState = { year: new Date().getFullYear(), month: new Date().getMonth(), range: "week" };
 let wired = false;
@@ -180,13 +181,23 @@ function dayCommentsHtml(dateStr) {
             ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
             <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
           </div>
+          ${likeButtonHtml(c)}
         </div>`;
     })
     .join("");
 }
 
+function wireDayLikes(root) {
+  wireLikeButtons(root, [...commentsByDay.values()].flat(), currentGrant.householdId, () => {
+    renderTodayComments();
+    if (openDay) renderDayModalComments();
+  });
+}
+
 function renderTodayComments() {
-  document.getElementById("guest-today-comments").innerHTML = dayCommentsHtml(formatLocalDate(new Date()));
+  const el = document.getElementById("guest-today-comments");
+  el.innerHTML = dayCommentsHtml(formatLocalDate(new Date()));
+  wireDayLikes(el);
 }
 
 // Only resolved days with a check-in are marked; no future shifts, no times.
@@ -231,7 +242,9 @@ function openDayModal(dateStr) {
 }
 
 function renderDayModalComments() {
-  document.getElementById("guest-day-comments").innerHTML = dayCommentsHtml(openDay);
+  const el = document.getElementById("guest-day-comments");
+  el.innerHTML = dayCommentsHtml(openDay);
+  wireDayLikes(el);
 }
 
 async function handleDayCommentSubmit(e) {
@@ -302,8 +315,13 @@ async function refresh() {
   ]);
   awards.sort((a, b) => (a.date < b.date ? 1 : -1));
 
+  awardComments = comments.filter((c) => c.prizeAwardDate);
+  renderPrizes(awards);
+}
+
+function renderPrizes(awards) {
   const commentsByAward = {};
-  comments.forEach((c) => {
+  awardComments.forEach((c) => {
     (commentsByAward[c.prizeAwardDate] ||= []).push(c);
   });
 
@@ -321,6 +339,7 @@ async function refresh() {
     el.querySelectorAll("[data-comment-form]").forEach((form) => {
       form.addEventListener("submit", handleCommentSubmit);
     });
+    wireLikeButtons(el, awardComments, currentGrant.householdId, () => renderPrizes(awards));
   });
 }
 
@@ -361,6 +380,7 @@ function renderAwardComments(award, awardComments) {
             <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
             <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
           </div>
+          ${likeButtonHtml(c)}
         </div>
       `
     )

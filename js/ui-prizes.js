@@ -1,8 +1,8 @@
 import { App, refreshAll } from "./app.js";
 import { streakPeriodLabel, streakRuleLabel, daysUntilNextPrize, isHighAward } from "./prizes.js";
 import { parseLocalDate } from "./streak.js";
-import { deleteMyComment } from "./db.js";
-import { escapeHtml, formatCommentTime } from "./comments-util.js";
+import { deleteMyComment, myHouseholdId } from "./db.js";
+import { escapeHtml, formatCommentTime, likeButtonHtml, wireLikeButtons } from "./comments-util.js";
 
 let els = {};
 
@@ -40,6 +40,7 @@ export function renderPrizes(app) {
                 <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
                 <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
               </div>
+              ${likeButtonHtml(c)}
               <button class="icon-btn" data-delete-comment data-id="${c.id}" title="מחיקת תגובה">🗑️</button>
             </div>
           `
@@ -58,6 +59,8 @@ export function renderPrizes(app) {
       `;
     })
     .join("");
+
+  wireLikeButtons(els.list, [...app.commentsByAward.values()].flat(), myHouseholdId(), () => renderPrizes(app));
 
   els.list.querySelectorAll("[data-delete-comment]").forEach((btn) => {
     btn.addEventListener("click", async () => {

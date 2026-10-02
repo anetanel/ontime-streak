@@ -1,5 +1,6 @@
 import { auth, db } from "./firebase-init.js";
 import {
+  deleteField,
   doc,
   getDoc,
   setDoc,
@@ -18,7 +19,7 @@ const DATA_VERSION = 4; // bumped from 3 (IndexedDB) with the move to Firestore
 // Each admin (her, you) gets their own household keyed by their own Google
 // uid — see firestore.rules. This is what keeps your test data completely
 // separate from her real one.
-function myHouseholdId() {
+export function myHouseholdId() {
   return auth.currentUser.uid;
 }
 
@@ -126,6 +127,15 @@ export async function markCommentsRead(commentIds) {
     commentIds.slice(i, i + 400).forEach((id) => batch.update(householdDoc(householdId, "comments", id), { readAt }));
     await batch.commit();
   }
+}
+
+// likes is a map of voter uid -> true, so each person's like is one field
+// they can set or remove without touching anyone else's (see firestore.rules).
+export async function setCommentLike(householdId, commentId, liked) {
+  const uid = auth.currentUser.uid;
+  await updateDoc(householdDoc(householdId, "comments", commentId), {
+    [`likes.${uid}`]: liked ? true : deleteField(),
+  });
 }
 
 export async function deleteMyComment(commentId) {

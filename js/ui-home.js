@@ -1,5 +1,5 @@
-import { getCheckin, saveCheckin, markCommentsRead } from "./db.js";
-import { escapeHtml, formatCommentTime, dayCommentMetaLabel } from "./comments-util.js";
+import { getCheckin, saveCheckin, markCommentsRead, myHouseholdId } from "./db.js";
+import { escapeHtml, formatCommentTime, dayCommentMetaLabel, likeButtonHtml, wireLikeButtons } from "./comments-util.js";
 import { renderHistory } from "./ui-history.js";
 import {
   computeCheckinResult,
@@ -251,9 +251,11 @@ function renderTodayComments(app, today) {
             ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
             <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
           </div>
+          ${likeButtonHtml(c)}
         </div>`;
     })
     .join("");
+  wireLikeButtons(document.getElementById("home-today-comments"), comments, myHouseholdId(), () => renderTodayComments(app, today));
 
   // Seen here, so mark read after rendering (highlight shows this once).
   const unread = comments.filter((c) => !c.readAt);

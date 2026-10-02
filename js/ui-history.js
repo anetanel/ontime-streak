@@ -1,8 +1,8 @@
 import { formatLocalDate, parseLocalDate, isScheduledDay, isLateExemptionAvailable, snapToTimeOptions, onTimePercent } from "./streak.js";
 import { showModal, hideModal, refreshAll, renderBadges, App } from "./app.js";
 import { pick } from "./gender.js";
-import { saveShift, deleteShift, deleteMyComment, markCommentsRead } from "./db.js";
-import { escapeHtml, formatCommentTime, dayCommentMetaLabel } from "./comments-util.js";
+import { saveShift, deleteShift, deleteMyComment, markCommentsRead, myHouseholdId } from "./db.js";
+import { escapeHtml, formatCommentTime, dayCommentMetaLabel, likeButtonHtml, wireLikeButtons } from "./comments-util.js";
 import { openArrivalTimeForm } from "./ui-home.js";
 import { getCalendarAccessToken } from "./firebase-init.js";
 import { syncShifts } from "./calendar-sync.js";
@@ -257,10 +257,13 @@ function renderDayComments(app, dateStr) {
             ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
             <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
           </div>
+          ${likeButtonHtml(c)}
           <button class="icon-btn" data-delete-comment data-id="${c.id}" title="מחיקת תגובה">🗑️</button>
         </div>`;
     })
     .join("");
+
+  wireLikeButtons(els.dayComments, comments, myHouseholdId(), () => renderDayComments(app, dateStr));
 
   els.dayComments.querySelectorAll("[data-delete-comment]").forEach((btn) => {
     btn.addEventListener("click", async () => {
