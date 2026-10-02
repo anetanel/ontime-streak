@@ -2,6 +2,7 @@ import { App, refreshAll } from "./app.js";
 import { streakPeriodLabel, streakRuleLabel, daysUntilNextPrize, isHighAward } from "./prizes.js";
 import { parseLocalDate } from "./streak.js";
 import { deleteMyComment } from "./db.js";
+import { escapeHtml, formatCommentTime } from "./comments-util.js";
 
 let els = {};
 
@@ -34,7 +35,7 @@ export function renderPrizes(app) {
         .sort((x, y) => (x.createdAt < y.createdAt ? -1 : 1))
         .map(
           (c) => `
-            <div class="comment-item">
+            <div class="comment-item${c.readAt ? "" : " unread"}">
               <div class="comment-content">
                 <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
                 <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
@@ -65,17 +66,4 @@ export function renderPrizes(app) {
       await refreshAll();
     });
   });
-}
-
-function formatCommentTime(iso) {
-  const d = new Date(iso);
-  const dateLabel = d.toLocaleDateString("he-IL", { day: "numeric", month: "numeric", year: "numeric" });
-  const timeLabel = d.toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" });
-  return `${dateLabel} · ${timeLabel}`;
-}
-
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
 }

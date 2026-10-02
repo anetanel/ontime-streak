@@ -103,7 +103,9 @@
       <div class="cal-legend">
         <span><i class="cal-dot on-time"></i>בזמן</span>
         <span><i class="cal-dot late"></i>איחור</span>
+        <span><i class="cal-dot comment"></i>יש תגובות</span>
       </div>
+      <div class="stat-label">הקשו על יום כדי להשאיר תגובה.</div>
     </div>
   </section>
 
@@ -203,6 +205,8 @@
         <span><i class="cal-dot late"></i>איחור</span>
         <span><i class="cal-dot missed"></i>אין משמרת</span>
         <span><i class="cal-dot future-shift"></i>משמרת עתידית</span>
+        <span><i class="cal-dot comment unread"></i>תגובה חדשה</span>
+        <span><i class="cal-dot comment"></i>תגובה שנקראה</span>
       </div>
       <div class="stat-label"><span data-m="הקש על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו." data-f="הקישי על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו.">הקישי על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו.</span></div>
     </div>
@@ -327,8 +331,8 @@
 
   <nav class="tabbar">
     <button data-screen="home" class="active"><span class="icon">🏠</span>בית</button>
-    <button data-screen="history"><span class="icon">📅</span>לוח שנה</button>
-    <button data-screen="rewards"><span class="icon">🎵</span>פרסים</button>
+    <button data-screen="history"><span class="icon">📅<span class="badge hidden" id="badge-history"></span></span>לוח שנה</button>
+    <button data-screen="rewards"><span class="icon">🎵<span class="badge hidden" id="badge-rewards"></span></span>פרסים</button>
     <button data-screen="settings"><span class="icon">⚙️</span>הגדרות</button>
   </nav>
 </div>
@@ -366,8 +370,22 @@
   <div class="modal-sheet">
     <h2 id="day-detail-title">יום</h2>
     <p id="day-detail-body" class="stat-label"></p>
+    <div id="day-detail-comments" class="comments-list"></div>
     <button class="btn btn-secondary" id="day-detail-edit" style="display:none;">הזנת/עריכת שעת הגעה</button>
     <button class="btn btn-secondary" id="day-detail-close">סגירה</button>
+  </div>
+</div>
+
+<div id="guest-day-modal" class="modal-backdrop hidden">
+  <div class="modal-sheet">
+    <h2 id="guest-day-title">יום</h2>
+    <p id="guest-day-info" class="stat-label"></p>
+    <div id="guest-day-comments" class="comments-list"></div>
+    <form class="comment-form" id="guest-day-form">
+      <input type="text" class="comment-input" id="guest-day-input" required maxlength="300">
+      <button type="submit" class="btn btn-primary">שליחה</button>
+    </form>
+    <button class="btn btn-secondary" id="guest-day-close">סגירה</button>
   </div>
 </div>
 

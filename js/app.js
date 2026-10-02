@@ -1,4 +1,4 @@
-import { getSettings, getAllCheckins, getAllShifts, getAllPrizeAwards, getMyComments, saveStreakState, getStreakState } from "./db.js";
+import { getSettings, getAllCheckins, getAllShifts, getAllPrizeAwards, getMyComments, markCommentsRead, saveStreakState, getStreakState } from "./db.js";
 import { formatLocalDate, computeStreak, computeLongestStreak } from "./streak.js";
 import { loadPrizeManifest } from "./prizes.js";
 import { initHome, renderHome } from "./ui-home.js";
@@ -19,6 +19,9 @@ export const App = {
   shiftsByDate: new Map(),
   prizeAwards: [],
   commentsByAward: new Map(),
+  commentsByDay: new Map(),
+  unreadDayCount: 0,
+  unreadPrizeCount: 0,
   prizeManifest: null,
   currentStreak: 0,
   longestStreak: 0,
@@ -42,9 +45,18 @@ export async function loadAll() {
   App.prizeAwards = prizeAwards.sort((a, b) => (a.date < b.date ? 1 : -1));
 
   App.commentsByAward = new Map();
+  App.commentsByDay = new Map();
+  App.unreadDayCount = 0;
+  App.unreadPrizeCount = 0;
   comments.forEach((c) => {
-    if (!App.commentsByAward.has(c.prizeAwardDate)) App.commentsByAward.set(c.prizeAwardDate, []);
-    App.commentsByAward.get(c.prizeAwardDate).push(c);
+    const byKey = c.dayDate ? App.commentsByDay : App.commentsByAward;
+    const key = c.dayDate || c.prizeAwardDate;
+    if (!byKey.has(key)) byKey.set(key, []);
+    byKey.get(key).push(c);
+    if (!c.readAt) {
+      if (c.dayDate) App.unreadDayCount += 1;
+      else App.unreadPrizeCount += 1;
+    }
   });
 
   const now = new Date();
@@ -68,6 +80,17 @@ export async function refreshAll() {
   renderHistory(App);
   renderPrizes(App);
   renderSettings(App);
+  renderBadges();
+}
+
+export function renderBadges() {
+  const set = (id, n) => {
+    const el = document.getElementById(id);
+    el.textContent = n > 99 ? "99+" : n;
+    el.classList.toggle("hidden", n === 0);
+  };
+  set("badge-history", App.unreadDayCount);
+  set("badge-rewards", App.unreadPrizeCount);
 }
 
 export function showModal(el) {
@@ -76,6 +99,23 @@ export function showModal(el) {
 
 export function hideModal(el) {
   el.classList.add("hidden");
+}
+
+// Keep the unread highlight visible while the tab is open; the badge clears
+// right away and the highlight disappears on the next render.
+async function markPrizeCommentsReadSoon() {
+  const ids = [];
+  App.commentsByAward.forEach((list) => list.forEach((c) => !c.readAt && ids.push(c.id)));
+  if (!ids.length) return;
+  const readAt = new Date().toISOString();
+  App.commentsByAward.forEach((list) => list.forEach((c) => { c.readAt ||= readAt; }));
+  App.unreadPrizeCount = 0;
+  renderBadges();
+  try {
+    await markCommentsRead(ids);
+  } catch (e) {
+    console.error("markCommentsRead failed:", e);
+  }
 }
 
 function setupTabs() {
@@ -90,6 +130,7 @@ function setupTabs() {
         root.querySelectorAll(".screen").forEach((s) => s.classList.remove("active"));
         document.getElementById(`screen-${btn.dataset.screen}`).classList.add("active");
         window.scrollTo(0, 0);
+        if (btn.dataset.screen === "rewards") markPrizeCommentsReadSoon();
       });
     });
   });

@@ -117,6 +117,17 @@ export async function getMyComments() {
   return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
 }
 
+// Unread = no readAt. Day comments carry dayDate, prize comments prizeAwardDate.
+export async function markCommentsRead(commentIds) {
+  const readAt = new Date().toISOString();
+  const householdId = myHouseholdId();
+  for (let i = 0; i < commentIds.length; i += 400) {
+    const batch = writeBatch(db);
+    commentIds.slice(i, i + 400).forEach((id) => batch.update(householdDoc(householdId, "comments", id), { readAt }));
+    await batch.commit();
+  }
+}
+
 export async function deleteMyComment(commentId) {
   await deleteDoc(householdDoc(myHouseholdId(), "comments", commentId));
 }
@@ -261,6 +272,18 @@ export async function getCommentsForHousehold(householdId) {
 export async function addCommentToHousehold({ householdId, prizeAwardDate, authorUid, authorLabel, text }) {
   await addDoc(householdCollection(householdId, "comments"), {
     prizeAwardDate,
+    authorUid,
+    authorLabel,
+    text,
+    createdAt: new Date().toISOString(),
+  });
+}
+
+export async function addDayCommentToHousehold({ householdId, dayDate, streak, dayStatus, authorUid, authorLabel, text }) {
+  await addDoc(householdCollection(householdId, "comments"), {
+    dayDate,
+    streak,
+    dayStatus,
     authorUid,
     authorLabel,
     text,

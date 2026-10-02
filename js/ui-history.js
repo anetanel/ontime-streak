@@ -1,7 +1,8 @@
 import { formatLocalDate, parseLocalDate, isScheduledDay, isLateExemptionAvailable, snapToTimeOptions, onTimePercent } from "./streak.js";
-import { showModal, hideModal, refreshAll, App } from "./app.js";
+import { showModal, hideModal, refreshAll, renderBadges, App } from "./app.js";
 import { pick } from "./gender.js";
-import { saveShift, deleteShift } from "./db.js";
+import { saveShift, deleteShift, deleteMyComment, markCommentsRead } from "./db.js";
+import { escapeHtml, formatCommentTime, dayCommentMetaLabel } from "./comments-util.js";
 import { openArrivalTimeForm } from "./ui-home.js";
 import { getCalendarAccessToken } from "./firebase-init.js";
 import { syncShifts } from "./calendar-sync.js";
@@ -35,6 +36,7 @@ export function initHistory() {
   els.dayBody = document.getElementById("day-detail-body");
   els.dayEdit = document.getElementById("day-detail-edit");
   els.dayClose = document.getElementById("day-detail-close");
+  els.dayComments = document.getElementById("day-detail-comments");
 
   els.shiftModal = document.getElementById("shift-form-modal");
   els.shiftTitle = document.getElementById("shift-form-title");
@@ -176,9 +178,11 @@ function renderCalendar(app) {
     const notYetResolved = dateStr >= todayStr;
     const cls = classifyDay(app, dateStr, notYetResolved);
     const todayCls = dateStr === todayStr ? " today" : "";
+    const dayComments = app.commentsByDay.get(dateStr);
+    const commentCls = dayComments ? (dayComments.some((c) => !c.readAt) ? " has-comments has-unread" : " has-comments") : "";
     const shift = app.shiftsByDate.get(dateStr);
     const timeHtml = shift ? `<span class="cal-day-time">${shift.startTime}</span>` : "";
-    html += `<div class="cal-day ${cls}${todayCls}" data-date="${dateStr}"><span class="cal-day-num">${day}</span>${timeHtml}</div>`;
+    html += `<div class="cal-day ${cls}${todayCls}${commentCls}" data-date="${dateStr}"><span class="cal-day-num">${day}</span>${timeHtml}</div>`;
   }
   els.calGrid.innerHTML = html;
 
@@ -188,7 +192,7 @@ function renderCalendar(app) {
       const rec = app.checkinsByDate.get(dateStr);
       const todayStr = formatLocalDate(new Date());
 
-      if (rec) {
+      if (rec || app.commentsByDay.has(dateStr)) {
         showDayDetail(app, dateStr);
         return;
       }
@@ -230,11 +234,53 @@ function showDayDetail(app, dateStr) {
       els.dayBody.textContent = text;
     }
     els.dayEdit.style.display = "block";
+  } else if (isScheduledDay(dateStr, app.shiftsByDate)) {
+    els.dayBody.textContent = dateStr >= formatLocalDate(new Date()) ? "יש משמרת ביום זה." : "יש משמרת ביום זה, ולא נרשמה הגעה.";
+    els.dayEdit.style.display = dateStr >= formatLocalDate(new Date()) ? "none" : "block";
   } else {
     els.dayBody.textContent = "אין משמרת ביום זה.";
     els.dayEdit.style.display = "none";
   }
+  renderDayComments(app, dateStr);
   showModal(els.dayModal);
+}
+
+function renderDayComments(app, dateStr) {
+  const comments = (app.commentsByDay.get(dateStr) || []).slice().sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+  els.dayComments.innerHTML = comments
+    .map((c) => {
+      const meta = dayCommentMetaLabel(c);
+      return `
+        <div class="comment-item${c.readAt ? "" : " unread"}">
+          <div class="comment-content">
+            <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
+            ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
+            <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
+          </div>
+          <button class="icon-btn" data-delete-comment data-id="${c.id}" title="מחיקת תגובה">🗑️</button>
+        </div>`;
+    })
+    .join("");
+
+  els.dayComments.querySelectorAll("[data-delete-comment]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("למחוק את התגובה?")) return;
+      await deleteMyComment(btn.dataset.id);
+      await refreshAll();
+      showDayDetail(App, dateStr);
+    });
+  });
+
+  // Mark read after rendering so the unread highlight shows this once; the
+  // calendar marker/badge update right away, the highlight on next open.
+  const unread = comments.filter((c) => !c.readAt);
+  if (!unread.length) return;
+  const readAt = new Date().toISOString();
+  unread.forEach((c) => { c.readAt = readAt; });
+  app.unreadDayCount -= unread.length;
+  renderBadges();
+  renderCalendar(app);
+  markCommentsRead(unread.map((c) => c.id)).catch((e) => console.error("markCommentsRead failed:", e));
 }
 
 function openShiftForm(app, dateStr) {

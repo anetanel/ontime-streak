@@ -102,6 +102,8 @@ body {
 }
 
 .comment-item:last-child { border-bottom: none; }
+.comment-item.unread { background: rgba(255, 59, 48, 0.1); border-radius: 8px; padding: 6px 8px; }
+.comment-meta { font-size: 11px; color: var(--accent); margin-top: 1px; }
 
 .comment-content {
   flex: 1;
@@ -367,7 +369,24 @@ body {
   cursor: pointer;
 }
 
-.tabbar button .icon { font-size: 22px; }
+.tabbar button .icon { font-size: 22px; position: relative; }
+.badge {
+  position: absolute;
+  top: -4px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  box-sizing: border-box;
+  border-radius: 8px;
+  background: #ff3b30;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
+}
+.badge.hidden { display: none; }
 .tabbar button.active { color: var(--accent); }
 
 .field {
@@ -619,6 +638,24 @@ body {
   line-height: 1;
 }
 
+/* Comment marker: dim = all read, red = has unread (admin); guests see the dim one. */
+.cal-day.has-comments::before {
+  content: "💬";
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 11px;
+  line-height: 1;
+  opacity: 0.55;
+}
+.cal-day.has-unread::before {
+  opacity: 1;
+  background: #ff3b30;
+  border-radius: 50%;
+  padding: 1px;
+  font-size: 10px;
+}
+
 .cal-day-num {
   font-size: 13px;
   font-weight: 600;
@@ -666,6 +703,8 @@ body {
 .cal-dot.on-time { background: rgba(52, 199, 89, 0.9); }
 .cal-dot.late { background: rgba(255, 59, 48, 0.9); }
 .cal-dot.missed { background: var(--border); }
+.cal-dot.comment { background: var(--text-dim); opacity: 0.55; }
+.cal-dot.comment.unread { background: #ff3b30; opacity: 1; }
 .cal-dot.future-shift { background: rgba(175, 82, 222, 0.8); }
 
 .month-nav {

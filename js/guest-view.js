@@ -3,12 +3,14 @@ import {
   getPrizeAwardsForHousehold,
   getCommentsForHousehold,
   addCommentToHousehold,
+  addDayCommentToHousehold,
   getCheckinsForHousehold,
   getShiftsForHousehold,
   getStreakStateForHousehold,
   getInvite,
 } from "./db.js";
 import { pick } from "./gender.js";
+import { escapeHtml, formatCommentTime, dayCommentInfo, dayCommentMetaLabel } from "./comments-util.js";
 import { streakPeriodLabel, streakRuleLabel, isHighAward } from "./prizes.js";
 import {
   CELEBRATION_TIERS,
@@ -23,6 +25,8 @@ let currentGrant = null;
 let listEl = null;
 let checkinsByDate = new Map();
 let shiftsByDate = new Map();
+let commentsByDay = new Map();
+let openDay = null;
 let calState = { year: new Date().getFullYear(), month: new Date().getMonth(), range: "week" };
 let wired = false;
 
@@ -55,6 +59,14 @@ function wireControls() {
     calState.month = now.getMonth();
     rerenderCalendar();
   });
+  document.getElementById("guest-calendar-grid").addEventListener("click", (e) => {
+    const cell = e.target.closest(".cal-day[data-date]");
+    if (cell) openDayModal(cell.dataset.date);
+  });
+  document.getElementById("guest-day-close").addEventListener("click", () => {
+    document.getElementById("guest-day-modal").classList.add("hidden");
+  });
+  document.getElementById("guest-day-form").addEventListener("submit", handleDayCommentSubmit);
   const toggle = document.getElementById("guest-pct-range-toggle");
   toggle.addEventListener("click", (e) => {
     const btn = e.target.closest("button[data-range]");
@@ -67,11 +79,13 @@ function wireControls() {
 
 // Read-only: unlike the admin's loadAll, a guest never writes streak state.
 async function loadStats() {
-  const [checkins, shifts, streakState] = await Promise.all([
+  const [checkins, shifts, streakState, comments] = await Promise.all([
     getCheckinsForHousehold(currentGrant.householdId),
     getShiftsForHousehold(currentGrant.householdId),
     getStreakStateForHousehold(currentGrant.householdId),
+    getCommentsForHousehold(currentGrant.householdId),
   ]);
+  setDayComments(comments);
   checkinsByDate = new Map(checkins.map((c) => [c.date, c]));
   shiftsByDate = new Map(shifts.map((s) => [s.date, s]));
 
@@ -99,7 +113,15 @@ function renderPct() {
   document.getElementById("guest-hist-pct").textContent = pct !== null ? `${pct}%` : "—";
 }
 
+function setDayComments(comments) {
+  commentsByDay = new Map();
+  comments.forEach((c) => {
+    if (c.dayDate) (commentsByDay.get(c.dayDate) || commentsByDay.set(c.dayDate, []).get(c.dayDate)).push(c);
+  });
+}
+
 // Only resolved days with a check-in are marked; no future shifts, no times.
+// Every day is tappable to leave a comment.
 function renderCalendar() {
   const { year, month } = calState;
   const monthDate = new Date(year, month, 1);
@@ -123,9 +145,69 @@ function renderCalendar() {
     const rec = dateStr <= todayStr ? checkinsByDate.get(dateStr) : null;
     const cls = rec ? (rec.status === "on-time" ? "on-time" : "late") : "none";
     const todayCls = dateStr === todayStr ? " today" : "";
-    html += `<div class="cal-day ${cls}${todayCls}"><span class="cal-day-num">${day}</span></div>`;
+    const commentCls = commentsByDay.has(dateStr) ? " has-comments" : "";
+    html += `<div class="cal-day ${cls}${todayCls}${commentCls}" data-date="${dateStr}"><span class="cal-day-num">${day}</span></div>`;
   }
   document.getElementById("guest-calendar-grid").innerHTML = html;
+}
+
+function openDayModal(dateStr) {
+  openDay = dateStr;
+  const info = dayCommentInfo(dateStr, checkinsByDate, shiftsByDate);
+  document.getElementById("guest-day-title").textContent = parseLocalDate(dateStr).toLocaleDateString("he-IL", { weekday: "long", month: "long", day: "numeric" });
+  document.getElementById("guest-day-info").textContent = dayCommentMetaLabel(info);
+  document.getElementById("guest-day-input").placeholder = pick(currentGrant.gender, "כתוב תגובה…", "כתבי תגובה…");
+  renderDayModalComments();
+  document.getElementById("guest-day-modal").classList.remove("hidden");
+}
+
+function renderDayModalComments() {
+  document.getElementById("guest-day-comments").innerHTML = (commentsByDay.get(openDay) || [])
+    .slice()
+    .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
+    .map((c) => {
+      const meta = dayCommentMetaLabel(c);
+      return `
+        <div class="comment-item">
+          <div class="comment-content">
+            <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
+            ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
+            <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
+          </div>
+        </div>`;
+    })
+    .join("");
+}
+
+async function handleDayCommentSubmit(e) {
+  e.preventDefault();
+  const input = document.getElementById("guest-day-input");
+  const text = input.value.trim();
+  if (!text || !openDay) return;
+
+  const btn = e.target.querySelector("button");
+  btn.disabled = true;
+  try {
+    const info = dayCommentInfo(openDay, checkinsByDate, shiftsByDate);
+    await addDayCommentToHousehold({
+      householdId: currentGrant.householdId,
+      dayDate: openDay,
+      streak: info.streak,
+      dayStatus: info.dayStatus,
+      authorUid: auth.currentUser.uid,
+      authorLabel: currentGrant.label || pick(currentGrant.gender, "אורח", "אורחת"),
+      text,
+    });
+    input.value = "";
+    setDayComments(await getCommentsForHousehold(currentGrant.householdId));
+    renderDayModalComments();
+    renderCalendar();
+  } catch (err) {
+    console.error("addDayComment failed:", err);
+    alert(pick(currentGrant.gender, "שליחת התגובה נכשלה. נסה שוב.", "שליחת התגובה נכשלה. נסי שוב."));
+  } finally {
+    btn.disabled = false;
+  }
 }
 
 async function renderHeader() {
@@ -243,17 +325,4 @@ async function handleCommentSubmit(e) {
 
 function formatAwardDate(dateStr) {
   return parseLocalDate(dateStr).toLocaleDateString("he-IL", { day: "numeric", month: "numeric", year: "numeric" });
-}
-
-function formatCommentTime(iso) {
-  const d = new Date(iso);
-  const dateLabel = d.toLocaleDateString("he-IL", { day: "numeric", month: "numeric", year: "numeric" });
-  const timeLabel = d.toLocaleTimeString("he-IL", { hour: "numeric", minute: "2-digit" });
-  return `${dateLabel} · ${timeLabel}`;
-}
-
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
 }
