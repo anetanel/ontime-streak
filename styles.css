@@ -596,11 +596,13 @@ body {
   align-items: flex-end;
   overflow: hidden;
   z-index: 50;
+  cursor: pointer; /* iOS only fires delegated clicks on elements that look clickable */
 }
 
 .modal-backdrop.hidden { display: none; }
 
 .modal-sheet {
+  cursor: auto;
   background: var(--card);
   width: 100%;
   min-width: 0;

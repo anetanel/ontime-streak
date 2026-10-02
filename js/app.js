@@ -221,8 +221,18 @@ async function bootApp() {
   await refreshAll();
 }
 
+// Tapping the dimmed area outside a modal sheet presses that modal's own
+// cancel/close button, so any cleanup it does still runs.
+function setupModalDismiss() {
+  document.addEventListener("click", (e) => {
+    if (!e.target.classList.contains("modal-backdrop")) return;
+    e.target.querySelector('[id$="-cancel"], [id$="-close"], [id$="-close-btn"]')?.click();
+  });
+}
+
 function boot() {
   setupTabs();
+  setupModalDismiss();
   pinTabbarToVisualViewport();
   registerServiceWorker();
   initAuthGate({
