@@ -117,7 +117,7 @@ function renderInviteRow(invite, guestGrants) {
         <div class="invite-label">${escapeHtml(invite.label || "ללא שם")}</div>
         <div class="stat-label">${status}</div>
       </div>
-      <button class="icon-btn" data-toggle-gender data-id="${invite.id}" data-gender="${normalizeGender(gender)}" data-uids="${uids}" title="החלפת לשון">${pick(gender, "אורח", "אורחת")}</button>
+      <button class="icon-btn" data-toggle-gender data-id="${invite.id}" data-gender="${normalizeGender(gender)}" data-uids="${uids}" title="החלפת לשון">${pick(gender, "🚹", "🚺")}</button>
       <button class="icon-btn" data-copy-link data-id="${invite.id}" title="העתקת קישור">🔗</button>
       <button class="icon-btn" data-delete-invite data-id="${invite.id}" data-uids="${uids}" title="הסרה">🗑️</button>
     </div>
