@@ -126,7 +126,7 @@ function renderTodayStatus(now) {
     icon = "🌴";
     title = "אין משמרת היום";
   } else if (checkin) {
-    sub = `התחלת משמרת: ${shift.startTime}`;
+    sub = `🕘 משמרת ב-${shift.startTime}`;
     if (checkin.status === "on-time") {
       icon = "✅";
       title = "הגעה בזמן";
@@ -137,7 +137,7 @@ function renderTodayStatus(now) {
   } else {
     const [h, m] = shift.startTime.split(":").map(Number);
     const started = now.getTime() > new Date(now.getFullYear(), now.getMonth(), now.getDate(), h, m).getTime();
-    sub = `התחלת משמרת: ${shift.startTime}`;
+    sub = `🕘 משמרת ב-${shift.startTime}`;
     if (started) {
       icon = "⏰";
       title = "המשמרת התחילה, ועדיין אין הגעה";
