@@ -1,4 +1,6 @@
-import { getCheckin, saveCheckin } from "./db.js";
+import { getCheckin, saveCheckin, markCommentsRead } from "./db.js";
+import { escapeHtml, formatCommentTime, dayCommentMetaLabel } from "./comments-util.js";
+import { renderHistory } from "./ui-history.js";
 import {
   computeCheckinResult,
   getTierForStreak,
@@ -10,7 +12,7 @@ import {
 } from "./streak.js";
 import { celebrate } from "./confetti.js";
 import { evaluateAndAwardPrize, streakPeriodLabel, streakRuleLabel, milestoneLabel, daysUntilNextPrize, isHighAward } from "./prizes.js";
-import { App, refreshAll, showModal, hideModal } from "./app.js";
+import { App, refreshAll, renderBadges, showModal, hideModal } from "./app.js";
 import { pick } from "./gender.js";
 
 let els = {};
@@ -235,6 +237,35 @@ export function showPrizeReveal(award) {
   showModal(els.revealModal);
 }
 
+function renderTodayComments(app, today) {
+  const card = document.getElementById("home-today-comments-card");
+  const comments = (app.commentsByDay.get(today) || []).slice().sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1));
+  card.classList.toggle("hidden", comments.length === 0);
+  document.getElementById("home-today-comments").innerHTML = comments
+    .map((c) => {
+      const meta = dayCommentMetaLabel(c);
+      return `
+        <div class="comment-item${c.readAt ? "" : " unread"}">
+          <div class="comment-content">
+            <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
+            ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
+            <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
+          </div>
+        </div>`;
+    })
+    .join("");
+
+  // Seen here, so mark read after rendering (highlight shows this once).
+  const unread = comments.filter((c) => !c.readAt);
+  if (!unread.length) return;
+  const readAt = new Date().toISOString();
+  unread.forEach((c) => { c.readAt = readAt; });
+  app.unreadDayCount -= unread.length;
+  renderBadges();
+  renderHistory(app);
+  markCommentsRead(unread.map((c) => c.id)).catch((e) => console.error("markCommentsRead failed:", e));
+}
+
 export function renderHome(app) {
   els.currentStreak.textContent = app.currentStreak;
   els.longestStreak.textContent = app.longestStreak;
@@ -245,6 +276,7 @@ export function renderHome(app) {
   }).join("");
 
   const today = formatLocalDate(new Date());
+  renderTodayComments(app, today);
   const todayRecord = app.checkinsByDate.get(today);
   const todayShift = app.shiftsByDate.get(today);
 
@@ -305,10 +337,4 @@ export function renderHome(app) {
   els.nextPrize.textContent = next
     ? `הפרס הבא בעוד ${next.days} ${next.days === 1 ? "יום" : "ימים"} (${next.tier.label}, ${streakRuleLabel(app.currentStreak + next.days)})`
     : "";
-}
-
-function escapeHtml(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
 }

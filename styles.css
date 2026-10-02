@@ -386,7 +386,7 @@ body {
   line-height: 16px;
   text-align: center;
 }
-.badge.hidden { display: none; }
+.badge.hidden, .card.hidden { display: none; }
 .tabbar button.active { color: var(--accent); }
 
 .field {

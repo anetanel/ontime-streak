@@ -57,9 +57,17 @@
     </div>
 
     <div class="card">
+      <h2 style="margin:0 0 4px; font-size:17px;">תגובות להיום</h2>
+      <div class="comments-list" id="guest-today-comments"></div>
+      <button class="btn btn-primary" id="guest-comment-today-btn" disabled>הוסיפי תגובה</button>
+    </div>
+
+    <div class="card">
       <div class="tier-stars" id="guest-tier-stars"></div>
       <div class="stat-label" style="text-align:center; margin-top:10px;">כל כוכב נפתח כשהרצף מגיע למספר הימים שמתחתיו, וחגיגה גדולה יותר מחכה בכל שלב.</div>
     </div>
+
+    <div id="guest-latest-prize"></div>
   </section>
 
   <section id="screen-guest-history" class="screen">
@@ -160,6 +168,11 @@
       </div>
     </div>
     <div class="stat-label" id="home-next-prize" style="text-align:center; margin-top:-6px; margin-bottom:14px;"></div>
+
+    <div class="card hidden" id="home-today-comments-card">
+      <h2 style="margin:0 0 4px; font-size:17px;">תגובות להיום</h2>
+      <div class="comments-list" id="home-today-comments"></div>
+    </div>
   </section>
 
   <section id="screen-history" class="screen">

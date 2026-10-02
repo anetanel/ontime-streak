@@ -63,6 +63,11 @@ function wireControls() {
     const cell = e.target.closest(".cal-day[data-date]");
     if (cell) openDayModal(cell.dataset.date);
   });
+  const todayBtn = document.getElementById("guest-comment-today-btn");
+  todayBtn.textContent = pick(currentGrant.gender, "הוסף תגובה", "הוסיפי תגובה");
+  todayBtn.addEventListener("click", () => {
+    openDayModal(formatLocalDate(new Date()));
+  });
   document.getElementById("guest-day-close").addEventListener("click", () => {
     document.getElementById("guest-day-modal").classList.add("hidden");
   });
@@ -105,6 +110,7 @@ async function loadStats() {
 
   renderPct();
   renderCalendar();
+  document.getElementById("guest-comment-today-btn").disabled = false;
 }
 
 function renderPct() {
@@ -118,6 +124,29 @@ function setDayComments(comments) {
   comments.forEach((c) => {
     if (c.dayDate) (commentsByDay.get(c.dayDate) || commentsByDay.set(c.dayDate, []).get(c.dayDate)).push(c);
   });
+  renderTodayComments();
+}
+
+function dayCommentsHtml(dateStr) {
+  return (commentsByDay.get(dateStr) || [])
+    .slice()
+    .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
+    .map((c) => {
+      const meta = dayCommentMetaLabel(c);
+      return `
+        <div class="comment-item">
+          <div class="comment-content">
+            <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
+            ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
+            <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
+          </div>
+        </div>`;
+    })
+    .join("");
+}
+
+function renderTodayComments() {
+  document.getElementById("guest-today-comments").innerHTML = dayCommentsHtml(formatLocalDate(new Date()));
 }
 
 // Only resolved days with a check-in are marked; no future shifts, no times.
@@ -162,21 +191,7 @@ function openDayModal(dateStr) {
 }
 
 function renderDayModalComments() {
-  document.getElementById("guest-day-comments").innerHTML = (commentsByDay.get(openDay) || [])
-    .slice()
-    .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
-    .map((c) => {
-      const meta = dayCommentMetaLabel(c);
-      return `
-        <div class="comment-item">
-          <div class="comment-content">
-            <div><b>${escapeHtml(c.authorLabel || "אורח/ת")}:</b> ${escapeHtml(c.text)}</div>
-            ${meta ? `<div class="comment-meta">${meta}</div>` : ""}
-            <div class="comment-time">${formatCommentTime(c.createdAt)}</div>
-          </div>
-        </div>`;
-    })
-    .join("");
+  document.getElementById("guest-day-comments").innerHTML = dayCommentsHtml(openDay);
 }
 
 async function handleDayCommentSubmit(e) {
@@ -252,19 +267,50 @@ async function refresh() {
     (commentsByAward[c.prizeAwardDate] ||= []).push(c);
   });
 
+  const latestEl = document.getElementById("guest-latest-prize");
   if (!awards.length) {
     listEl.innerHTML = `<div class="empty-hint">עוד אין פרסים לשתף.</div>`;
+    latestEl.innerHTML = renderLatestPrize(null, []);
     return;
   }
 
   listEl.innerHTML = awards.map((award) => renderAwardCard(award, commentsByAward[award.date] || [])).join("");
+  latestEl.innerHTML = renderLatestPrize(awards[0], commentsByAward[awards[0].date] || []);
 
-  listEl.querySelectorAll("[data-comment-form]").forEach((form) => {
-    form.addEventListener("submit", handleCommentSubmit);
+  [listEl, latestEl].forEach((el) => {
+    el.querySelectorAll("[data-comment-form]").forEach((form) => {
+      form.addEventListener("submit", handleCommentSubmit);
+    });
   });
 }
 
-function renderAwardCard(award, awardComments) {
+// Same look as the admin home's last-prize card, plus comments on it.
+function renderLatestPrize(award, awardComments) {
+  if (!award) {
+    return `
+      <div class="card reward-card">
+        <div class="placeholder">🎵</div>
+        <div>
+          <div class="reward-title">עוד לא נפתח פרס</div>
+          <div class="reward-sub">${pick(currentGrant.gender, "תמשיך ברצף!", "תמשיכי ברצף!")}</div>
+        </div>
+      </div>`;
+  }
+  return `
+    <div class="card">
+      <div class="reward-card${isHighAward(award) ? " high" : ""}" style="margin-bottom:0;">
+        <img src="prizes/${award.prizeFile}" alt="${escapeHtml(award.prizeTitle)}" onerror="this.style.display='none'">
+        <div>
+          <div class="reward-sub" style="margin:0 0 2px;">הפרס האחרון היה:</div>
+          <div class="reward-title">${escapeHtml(award.prizeTitle)}</div>
+          <div class="reward-sub">${streakPeriodLabel(award.streakDay)} · ${streakRuleLabel(award.streakDay)}</div>
+        </div>
+      </div>
+      ${renderAwardComments(award, awardComments)}
+    </div>`;
+}
+
+function renderAwardComments(award, awardComments) {
   const commentsHtml = awardComments
     .slice()
     .sort((a, b) => (a.createdAt < b.createdAt ? -1 : 1))
@@ -281,6 +327,15 @@ function renderAwardCard(award, awardComments) {
     .join("");
 
   return `
+    <div class="comments-list">${commentsHtml}</div>
+    <form class="comment-form" data-comment-form data-award-date="${award.date}">
+      <input type="text" class="comment-input" placeholder="${pick(currentGrant.gender, "השאר ברכה…", "השאירי ברכה…")}" required maxlength="300">
+      <button type="submit" class="btn btn-primary">שליחה</button>
+    </form>`;
+}
+
+function renderAwardCard(award, awardComments) {
+  return `
     <div class="card">
       <div class="reward-item${isHighAward(award) ? " high" : ""}">
         <img src="prizes/${award.prizeFile}" alt="" onerror="this.style.display='none'">
@@ -289,11 +344,7 @@ function renderAwardCard(award, awardComments) {
           <div class="sub">${streakPeriodLabel(award.streakDay)} · ${streakRuleLabel(award.streakDay)} · ${formatAwardDate(award.date)}</div>
         </div>
       </div>
-      <div class="comments-list">${commentsHtml}</div>
-      <form class="comment-form" data-comment-form data-award-date="${award.date}">
-        <input type="text" class="comment-input" placeholder="${pick(currentGrant.gender, "השאר ברכה…", "השאירי ברכה…")}" required maxlength="300">
-        <button type="submit" class="btn btn-primary">שליחה</button>
-      </form>
+      ${renderAwardComments(award, awardComments)}
     </div>
   `;
 }
