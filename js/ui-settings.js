@@ -1,4 +1,4 @@
-import { saveSettings, resetAllData } from "./db.js";
+import { saveSettings, resetAllData, DEFAULT_CALENDAR_KEYWORD } from "./db.js";
 import { App, refreshAll, checkForUpdatesNow } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
 import { APP_VERSION, APP_BUILD_TIME } from "./version.js";
@@ -7,6 +7,7 @@ import { pick, normalizeGender, applyGenderText } from "./gender.js";
 
 let els = {};
 let saveTimer = null;
+let keywordStatusTimer = null;
 
 export function initSettings() {
   els.accountPhoto = document.getElementById("account-photo");
@@ -30,6 +31,26 @@ export function initSettings() {
   els.accountSignoutBtn.addEventListener("click", () => signOutUser());
 
   els.sound.addEventListener("change", debounceSaveSettings);
+  els.calendarKeyword = document.getElementById("set-calendar-keyword");
+  els.calendarKeywordBtn = document.getElementById("set-calendar-keyword-btn");
+  els.calendarKeywordLabel = document.getElementById("calendar-keyword-label");
+  const savedKeyword = () => App.settings.calendarKeyword || DEFAULT_CALENDAR_KEYWORD;
+  const updateKeywordBtn = () => {
+    const v = els.calendarKeyword.value.trim() || DEFAULT_CALENDAR_KEYWORD;
+    els.calendarKeywordBtn.disabled = v === savedKeyword();
+  };
+  els.calendarKeyword.addEventListener("input", updateKeywordBtn);
+  els.calendarKeywordBtn.addEventListener("click", async () => {
+    const calendarKeyword = els.calendarKeyword.value.trim() || DEFAULT_CALENDAR_KEYWORD;
+    await saveSettings({ ...App.settings, calendarKeyword });
+    await refreshAll();
+    els.calendarKeyword.value = calendarKeyword;
+    updateKeywordBtn();
+    const status = document.getElementById("set-calendar-keyword-status");
+    status.textContent = "✓ נשמר";
+    clearTimeout(keywordStatusTimer);
+    keywordStatusTimer = setTimeout(() => (status.textContent = ""), 2500);
+  });
   els.genderToggle = document.getElementById("gender-toggle");
   els.genderToggle.addEventListener("click", async (e) => {
     const btn = e.target.closest("button[data-gender]");
@@ -254,6 +275,10 @@ async function handleReset() {
 
 export function renderSettings(app) {
   els.sound.checked = app.settings.soundEnabled;
+  const keyword = app.settings.calendarKeyword || DEFAULT_CALENDAR_KEYWORD;
+  if (document.activeElement !== els.calendarKeyword) els.calendarKeyword.value = keyword;
+  els.calendarKeywordLabel.textContent = keyword;
+  els.calendarKeywordBtn.disabled = (els.calendarKeyword.value.trim() || DEFAULT_CALENDAR_KEYWORD) === keyword;
   const gender = normalizeGender(app.settings.gender);
   [...els.genderToggle.children].forEach((b) => b.classList.toggle("active", b.dataset.gender === gender));
   applyGenderText(document.getElementById("app"), gender);

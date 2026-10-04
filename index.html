@@ -230,7 +230,7 @@
       <div class="stat-label"><span data-m="הקש על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו." data-f="הקישי על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו.">הקישי על יום עתידי כדי להוסיף לו משמרת, ועל יום שעבר כדי לערוך את שעת ההגעה שלו.</span></div>
     </div>
     <div class="card">
-      <div class="stat-label" style="margin-bottom:10px;">מייבא משמרות מאירועים בשם "עבודע" ביומן Google, מהיום והלאה. קריאה בלבד — היומן לא משתנה.</div>
+      <div class="stat-label" style="margin-bottom:10px;">מייבא משמרות מאירועים בשם "<span id="calendar-keyword-label">עבודע</span>" ביומן Google, מהיום והלאה. קריאה בלבד — היומן לא משתנה.</div>
       <button class="btn btn-secondary" id="calendar-sync-btn">סנכרון עם היומן</button>
       <div id="calendar-sync-status" class="stat-label"></div>
     </div>
@@ -297,6 +297,16 @@
           <span class="thumb"></span>
         </label>
       </div>
+    </div>
+
+    <div class="card">
+      <h3>מילת מפתח ליומן</h3>
+      <div class="stat-label" style="margin-bottom:10px;">אירועים ביומן Google עם כותרת זהה בדיוק למילה הזו מסונכרנים כמשמרות.</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <input type="text" class="comment-input" id="set-calendar-keyword" maxlength="60" aria-label="מילת מפתח ליומן">
+        <button class="btn btn-secondary" id="set-calendar-keyword-btn" style="width:auto;padding:10px 18px;font-size:15px;" disabled>אישור</button>
+      </div>
+      <div id="set-calendar-keyword-status" class="stat-label" style="margin-top:8px;"></div>
     </div>
 
     <div class="card">

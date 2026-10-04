@@ -74,11 +74,15 @@ async function deleteCommentsForDate(householdId, date) {
   await batch.commit();
 }
 
+// Intentional spelling (not "עבודה").
+export const DEFAULT_CALENDAR_KEYWORD = "עבודע";
+
 export const DEFAULT_SETTINGS = {
   id: "settings",
   soundEnabled: true,
   gender: "f",
   themePreference: "system",
+  calendarKeyword: DEFAULT_CALENDAR_KEYWORD,
   lastBackupAt: null,
   createdAt: new Date().toISOString(),
 };

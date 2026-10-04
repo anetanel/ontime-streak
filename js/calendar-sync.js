@@ -1,9 +1,7 @@
-import { saveShift, deleteShift } from "./db.js";
+import { saveShift, deleteShift, DEFAULT_CALENDAR_KEYWORD } from "./db.js";
 import { App } from "./app.js";
 import { formatLocalDate } from "./streak.js";
 
-// Intentional spelling (not "עבודה").
-export const WORK_EVENT_TITLE = "עבודע";
 const EVENTS_URL = "https://www.googleapis.com/calendar/v3/calendars/primary/events";
 
 function pad(n) {
@@ -14,12 +12,13 @@ function pad(n) {
 export async function fetchWorkShifts(token) {
   const now = new Date();
   const timeMin = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+  const keyword = (App.settings.calendarKeyword || DEFAULT_CALENDAR_KEYWORD).trim();
   const byDate = new Map();
   let pageToken = "";
 
   do {
     const params = new URLSearchParams({
-      q: WORK_EVENT_TITLE,
+      q: keyword,
       singleEvents: "true",
       orderBy: "startTime",
       timeMin,
@@ -34,7 +33,7 @@ export async function fetchWorkShifts(token) {
     for (const ev of data.items || []) {
       // q is a fuzzy search, so re-check the exact title. All-day events have
       // no start time to use, so they can't define a shift.
-      if (ev.status === "cancelled" || (ev.summary || "").trim() !== WORK_EVENT_TITLE) continue;
+      if (ev.status === "cancelled" || (ev.summary || "").trim() !== keyword) continue;
       if (!ev.start || !ev.start.dateTime) continue;
       const start = new Date(ev.start.dateTime);
       const date = formatLocalDate(start);
