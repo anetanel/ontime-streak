@@ -83,7 +83,7 @@ Neither of those revokes someone who already redeemed the link — their access 
 
 ### Google Calendar sync (shifts)
 
-Calendar screen → "סנכרון עם היומן" pulls timed events titled exactly `עבודע` (intentional spelling) from the signed-in admin's **primary** calendar, today and later, into shifts. Read-only toward Google (GET only, scope `calendar.readonly`, token requested via popup per tap and never stored). Calendar wins on the start time of a date; synced shifts (`source: "calendar"`) whose event disappeared are removed for today/future; manual shifts and past dates are never touched (editing a synced shift by hand makes it manual). All-day events are ignored; several events on one day → earliest.
+Calendar screen → "סנכרון עם היומן" pulls timed events whose title exactly matches the keyword (Settings → "מילת מפתח ליומן", saved as `calendarKeyword`; default `עבודע`, intentional spelling) from the signed-in admin's **primary** calendar, today and later, into shifts. Read-only toward Google (GET only, scope `calendar.readonly`, token requested via popup per tap and never stored). Calendar wins on the start time of a date; synced shifts (`source: "calendar"`) whose event disappeared are removed for today/future; manual shifts and past dates are never touched (editing a synced shift by hand makes it manual). All-day events are ignored; several events on one day → earliest.
 
 One-time setup: in Google Cloud Console for project `ontime-streak`, enable the **Google Calendar API** and add the `calendar.readonly` scope on the OAuth consent screen (add both admin emails as test users while unverified).
 
