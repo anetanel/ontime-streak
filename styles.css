@@ -719,8 +719,9 @@ body {
 .cal-dot.on-time { background: rgba(52, 199, 89, 0.9); }
 .cal-dot.late { background: rgba(255, 59, 48, 0.9); }
 .cal-dot.missed { background: var(--border); }
-.cal-dot.comment { background: var(--text-dim); opacity: 0.55; }
-.cal-dot.comment.unread { background: #ff3b30; opacity: 1; }
+.cal-dot.comment { width: auto; height: auto; border-radius: 0; font-size: 11px; line-height: 1; opacity: 0.55; }
+.cal-dot.comment::before { content: "💬"; }
+.cal-dot.comment.unread { background: #ff3b30; border-radius: 50%; padding: 1px; font-size: 10px; opacity: 1; }
 .cal-dot.future-shift { background: rgba(175, 82, 222, 0.8); }
 
 .month-nav {
