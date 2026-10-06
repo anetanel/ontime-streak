@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v126";
+const CACHE_NAME = "ontime-streak-v127";
 const ASSETS = [
   "./",
   "./index.html",
@@ -32,6 +32,7 @@ const ASSETS = [
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/icon-512-maskable.png",
+  "./js/lightbox.js",
   "./prizes/manifest.json",
   "./prizes/low/alon-olearchik.jpg",
   "./prizes/low/amir-lev.jpg",

@@ -1,3 +1,4 @@
+import "./lightbox.js";
 import { auth, signOutUser } from "./firebase-init.js";
 import {
   getPrizeAwardsForHousehold,

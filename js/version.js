@@ -1,2 +1,2 @@
-export const APP_VERSION = "126";
-export const APP_BUILD_TIME = "2026-10-04 11:27"; // local time of the bump
+export const APP_VERSION = "127";
+export const APP_BUILD_TIME = "2026-10-06 16:00"; // local time of the bump

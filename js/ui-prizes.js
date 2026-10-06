@@ -1,3 +1,4 @@
+import "./lightbox.js";
 import { App, refreshAll } from "./app.js";
 import { streakPeriodLabel, streakRuleLabel, daysUntilNextPrize, isHighAward } from "./prizes.js";
 import { parseLocalDate } from "./streak.js";
