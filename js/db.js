@@ -94,7 +94,7 @@ export async function getSettings() {
 }
 
 export async function saveSettings(settings) {
-  await setDoc(householdDoc(myHouseholdId(), "settings", "settings"), { ...settings, id: "settings" });
+  await setDoc(householdDoc(myHouseholdId(), "settings", "settings"), { ...settings, id: "settings" }, { merge: true });
 }
 
 export async function getAllCheckins() {
