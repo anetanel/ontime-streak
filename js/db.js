@@ -84,6 +84,7 @@ export const DEFAULT_SETTINGS = {
   themePreference: "system",
   calendarKeyword: DEFAULT_CALENDAR_KEYWORD,
   lastBackupAt: null,
+  lastCalendarSyncAt: null,
   createdAt: new Date().toISOString(),
 };
 

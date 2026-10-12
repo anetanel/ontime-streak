@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v128";
+const CACHE_NAME = "ontime-streak-v129";
 const ASSETS = [
   "./",
   "./index.html",
@@ -14,6 +14,8 @@ const ASSETS = [
   "./js/vendor/firebase-app.js",
   "./js/vendor/firebase-auth.js",
   "./js/vendor/firebase-firestore.js",
+  "./js/vendor/firebase-messaging.js",
+  "./js/push.js",
   "./js/streak.js",
   "./js/comments-util.js",
   "./js/confetti.js",
@@ -136,6 +138,37 @@ self.addEventListener("fetch", (event) => {
           }
           return new Response("", { status: 503 });
         });
+    })
+  );
+});
+
+// Data-only FCM messages arrive as raw push events. iOS requires every push
+// to show a notification, so always build one from the payload.
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    const payload = event.data ? event.data.json() : {};
+    data = payload.data || payload;
+  } catch (e) {
+    // fall through to the generic notification
+  }
+  event.waitUntil(
+    self.registration.showNotification(data.title || "On-Time Streak", {
+      body: data.body || "",
+      icon: "./icons/icon-192.png",
+      tag: data.tag || undefined,
+      dir: "rtl",
+      lang: "he",
+    })
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil(
+    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
+      if (wins.length) return wins[0].focus();
+      return self.clients.openWindow("./index.html");
     })
   );
 });

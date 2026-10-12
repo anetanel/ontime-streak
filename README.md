@@ -118,7 +118,7 @@ __test.reset()                      // wipes all local data back to empty
 
 ## Known limitations
 
-- No reminder notifications — iOS Safari PWAs can't reliably send background push without a paid service. Use a regular iPhone alarm as the reminder to open the app.
+- Push notifications (new guest comment; calendar not synced for 7+ days) only work in the Home Screen install on iOS 16.4+, after turning the switch on in Settings. Server side is `functions/` (Cloud Functions, Blaze plan): `firebase deploy --only functions`. The Web Push key (`VAPID_KEY` in `js/firebase-config.js`) comes from Firebase Console → Project settings → Cloud Messaging → Web Push certificates. The reminder runs daily 09:00 Asia/Jerusalem and repeats until the next calendar sync.
 - Moving to a new phone is now just signing in with the same Google account (data lives in Firestore, not on-device) — Export/Import Backup is a fallback, not the only path, the way it used to be.
 - Backfilling only works for a date that already has a shift entered for it — there's still no way to retroactively add both a shift and an arrival time for a day nothing was ever scheduled on.
 - Shifts need to be entered before the day happens — there's no automatic recurring pattern, since the work schedule is irregular. A shift added after the fact for a past date will still be picked up by the streak/history calculations, but won't retroactively help if a check-in was already missed.

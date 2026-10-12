@@ -9,6 +9,9 @@ export const firebaseConfig = {
   appId: "1:513765829256:web:d2a4e821740dc076e94d3d",
 };
 
+// Web Push certificate key pair (public key). Firebase Console → Project settings → Cloud Messaging → Web Push certificates → Generate key pair.
+export const VAPID_KEY = "BG_5t2jqVp_mu_7dh1lhk5rs3offSoQz1hsLH9ZxaDVgDtdgnLOHEuDNctR-XyM8piS5uIPSKMlqGMJL2bp9gP4";
+
 // Google accounts allowed to sign in as the app's two admins (full
 // read/write). This list is a UX convenience only (so an unauthorized
 // Google account gets a clear message instead of a silent Firestore

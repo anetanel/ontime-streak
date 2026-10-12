@@ -3,6 +3,7 @@ import { App, refreshAll, checkForUpdatesNow } from "./app.js";
 import { exportBackup, readBackupFile, importBackup } from "./backup.js";
 import { APP_VERSION, APP_BUILD_TIME } from "./version.js";
 import { auth, signOutUser } from "./firebase-init.js";
+import { pushSupported, pushEnabled, enablePush, disablePush } from "./push.js";
 import { pick, normalizeGender, applyGenderText } from "./gender.js";
 
 let els = {};
@@ -31,6 +32,7 @@ export function initSettings() {
   els.accountSignoutBtn.addEventListener("click", () => signOutUser());
 
   els.sound.addEventListener("change", debounceSaveSettings);
+  initPushToggle();
   els.calendarKeyword = document.getElementById("set-calendar-keyword");
   els.calendarKeywordBtn = document.getElementById("set-calendar-keyword-btn");
   els.calendarKeywordLabel = document.getElementById("calendar-keyword-label");
@@ -298,4 +300,30 @@ export function renderSettings(app) {
     els.banner.style.display = "block";
     els.banner.textContent = pick(app.settings.gender, "גבה את הנתונים שלך כדי שלא לאבד את היסטוריית הרצף.", "גבי את הנתונים שלך כדי שלא לאבד את היסטוריית הרצף.");
   }
+}
+
+async function initPushToggle() {
+  const card = document.getElementById("push-card");
+  const toggle = document.getElementById("set-push");
+  const status = document.getElementById("set-push-status");
+  if (!(await pushSupported())) return;
+  card.style.display = "";
+  toggle.checked = pushEnabled();
+  toggle.addEventListener("change", async () => {
+    status.textContent = "";
+    try {
+      if (toggle.checked) {
+        if (!(await enablePush())) {
+          toggle.checked = false;
+          status.textContent = "לא התקבל אישור להתראות. אפשר להפעיל בהגדרות המכשיר.";
+        }
+      } else {
+        await disablePush();
+      }
+    } catch (err) {
+      console.error("push toggle failed:", err);
+      toggle.checked = pushEnabled();
+      status.textContent = "הפעולה נכשלה. נסי שוב.";
+    }
+  });
 }

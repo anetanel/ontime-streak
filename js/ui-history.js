@@ -1,7 +1,7 @@
 import { formatLocalDate, parseLocalDate, isScheduledDay, isLateExemptionAvailable, snapToTimeOptions, onTimePercent } from "./streak.js";
 import { showModal, hideModal, refreshAll, renderBadges, App } from "./app.js";
 import { pick } from "./gender.js";
-import { saveShift, deleteShift, deleteMyComment, markCommentsRead, myHouseholdId } from "./db.js";
+import { saveShift, saveSettings, deleteShift, deleteMyComment, markCommentsRead, myHouseholdId } from "./db.js";
 import { escapeHtml, formatCommentTime, dayCommentMetaLabel, likeButtonHtml, wireLikeButtons } from "./comments-util.js";
 import { openArrivalTimeForm } from "./ui-home.js";
 import { getCalendarAccessToken } from "./firebase-init.js";
@@ -93,6 +93,7 @@ async function handleCalendarSync() {
     const token = await getCalendarAccessToken();
     els.calendarSyncStatus.textContent = pick(App.settings.gender, "מסנכרן…", "מסנכרנת…");
     const { added, updated, removed } = await syncShifts(token);
+    await saveSettings({ ...App.settings, lastCalendarSyncAt: new Date().toISOString() });
     await refreshAll();
     els.calendarSyncStatus.textContent =
       added + updated + removed === 0

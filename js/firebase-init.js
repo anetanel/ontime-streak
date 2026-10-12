@@ -10,7 +10,7 @@ import {
 import { initializeFirestore, persistentLocalCache, persistentSingleTabManager } from "./vendor/firebase-firestore.js";
 import { firebaseConfig } from "./firebase-config.js";
 
-const app = initializeApp(firebaseConfig);
+export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 
 // Keeps checkins/shifts/prizes readable and writable offline, syncing once
