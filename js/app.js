@@ -74,7 +74,11 @@ export async function loadAll() {
   });
 }
 
+let adminReady = false;
+let lastRefreshAt = 0;
+
 export async function refreshAll() {
+  lastRefreshAt = Date.now();
   await loadAll();
   renderHome(App);
   renderHistory(App);
@@ -173,6 +177,9 @@ function registerServiceWorker() {
       document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
           swRegistration.update().catch(() => {});
+          // Fallback for returning from a notification tap on iOS, where the
+          // service worker's message can arrive before the page is awake.
+          if (adminReady && Date.now() - lastRefreshAt > 10000) refreshAll().catch(() => {});
         }
       });
     } catch (e) {
@@ -184,6 +191,10 @@ function registerServiceWorker() {
   // already open keeps running under the old one until it reloads.
   // Reload automatically the moment control switches over, so a fresh
   // launch (or the next time it's foregrounded) always shows the update.
+  navigator.serviceWorker.addEventListener("message", (e) => {
+    if (e.data?.type === "refresh" && adminReady) refreshAll().catch(() => {});
+  });
+
   let refreshedAlready = false;
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (refreshedAlready) return;
@@ -219,6 +230,7 @@ async function bootApp() {
   initSettings();
   initInvites();
   await refreshAll();
+  adminReady = true;
 }
 
 // Tapping the dimmed area outside a modal sheet presses that modal's own

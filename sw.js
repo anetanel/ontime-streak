@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v131";
+const CACHE_NAME = "ontime-streak-v132";
 const ASSETS = [
   "./",
   "./index.html",
@@ -168,7 +168,11 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   event.waitUntil(
     self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
-      if (wins.length) return wins[0].focus();
+      if (wins.length) {
+        // An already-open app won't reload on its own; tell it to refetch.
+        wins[0].postMessage({ type: "refresh" });
+        return wins[0].focus();
+      }
       return self.clients.openWindow("./index.html");
     })
   );
