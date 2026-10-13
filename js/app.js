@@ -76,9 +76,16 @@ export async function loadAll() {
 
 let adminReady = false;
 let lastRefreshAt = 0;
+let refreshing = null;
 
 export async function refreshAll() {
   lastRefreshAt = Date.now();
+  if (refreshing) return refreshing;
+  refreshing = refreshWork().finally(() => { refreshing = null; });
+  return refreshing;
+}
+
+async function refreshWork() {
   await loadAll();
   renderHome(App);
   renderHistory(App);
@@ -192,7 +199,9 @@ function registerServiceWorker() {
   // Reload automatically the moment control switches over, so a fresh
   // launch (or the next time it's foregrounded) always shows the update.
   navigator.serviceWorker.addEventListener("message", (e) => {
-    if (e.data?.type === "refresh" && adminReady) refreshAll().catch(() => {});
+    // A foreground refresh may have just run; a second one would find the
+    // comments already marked read and lose the red "new" highlight.
+    if (e.data?.type === "refresh" && adminReady && Date.now() - lastRefreshAt > 5000) refreshAll().catch(() => {});
   });
 
   let refreshedAlready = false;
