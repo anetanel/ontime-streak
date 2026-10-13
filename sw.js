@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v130";
+const CACHE_NAME = "ontime-streak-v131";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const ASSETS = [
   "./js/auth-gate.js",
   "./js/guest-view.js",
   "./js/gender.js",
+  "./js/install-hint.js",
   "./js/firebase-init.js",
   "./js/firebase-config.js",
   "./js/vendor/firebase-app.js",

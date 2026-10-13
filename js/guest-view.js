@@ -11,6 +11,7 @@ import {
   getInvite,
 } from "./db.js";
 import { pick } from "./gender.js";
+import { initInstallHint } from "./install-hint.js";
 import { escapeHtml, formatCommentTime, dayCommentInfo, dayCommentMetaLabel, likeButtonHtml, adminReactionHtml, wireLikeButtons } from "./comments-util.js";
 import { streakPeriodLabel, streakRuleLabel, isHighAward } from "./prizes.js";
 import {
@@ -46,6 +47,7 @@ function wireControls() {
   if (wired) return;
   wired = true;
 
+  initInstallHint(currentGrant.gender);
   const rerenderCalendar = () => renderCalendar();
   document.getElementById("guest-cal-prev").addEventListener("click", () => {
     calState.month -= 1;

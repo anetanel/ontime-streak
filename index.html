@@ -31,6 +31,12 @@
   <section id="screen-guest-home" class="screen active">
     <h1 class="topbar">נעה בזמן</h1>
 
+    <div class="card install-card" id="guest-install-card" style="display:none;">
+      <button class="install-close" id="guest-install-dismiss" aria-label="סגירה">✕</button>
+      <div class="install-title" id="guest-install-title"></div>
+      <ol class="install-steps" id="guest-install-steps"></ol>
+    </div>
+
     <div class="card" id="guest-today-status" style="display:none; text-align:center;">
       <div id="guest-today-status-icon" style="font-size:32px;"></div>
       <div id="guest-today-status-title" style="font-size:17px; font-weight:600;"></div>
