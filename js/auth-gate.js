@@ -35,7 +35,8 @@ async function useInviteManifest(inviteId) {
     manifest.start_url = new URL(`index.html?invite=${encodeURIComponent(inviteId)}`, base).href;
     manifest.scope = base.href;
     manifest.icons = manifest.icons.map((i) => ({ ...i, src: new URL(i.src, base).href }));
-    link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" }));
+    // A data: URI rather than a blob: URL — iOS ignores blob manifests.
+    link.href = `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}`;
   } catch (e) {
     // keep the static manifest; the paste form on the gate is the fallback
   }
