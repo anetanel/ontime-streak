@@ -13,14 +13,32 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 // Data-only: the service worker builds the visible notification (see sw.js).
 async function notifyOwner(ownerId, data) {
   const snap = await db.collection(`households/${ownerId}/pushTokens`).get();
-  if (snap.empty) return;
-  const tokens = snap.docs.map((d) => d.id);
+  await sendToTokens(snap.docs, data);
+}
+
+// Guests whose grant was revoked (🚫) keep their token doc; drop it instead of sending.
+async function notifyGuests(ownerId, data) {
+  const snap = await db.collection(`households/${ownerId}/guestPushTokens`).get();
+  const grants = await Promise.all(snap.docs.map((d) => db.doc(`guestGrants/${d.get("uid")}`).get()));
+  const live = [];
+  const revoked = [];
+  snap.docs.forEach((d, i) => {
+    const g = grants[i];
+    (g.exists && g.get("householdId") === ownerId ? live : revoked).push(d);
+  });
+  await Promise.all(revoked.map((d) => d.ref.delete()));
+  await sendToTokens(live, data);
+}
+
+async function sendToTokens(docs, data) {
+  if (!docs.length) return;
+  const tokens = docs.map((d) => d.id);
   const res = await getMessaging().sendEachForMulticast({ tokens, data });
   const dead = [];
   res.responses.forEach((r, i) => {
     const code = r.error && r.error.code;
     if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
-      dead.push(snap.docs[i].ref);
+      dead.push(docs[i].ref);
     }
   });
   await Promise.all(dead.map((ref) => ref.delete()));
@@ -38,6 +56,21 @@ exports.onCommentCreated = onDocumentCreated("households/{ownerId}/comments/{com
     body: `${c.authorLabel || "אורח"}: ${text.length > 120 ? text.slice(0, 117) + "…" : text}`,
     tag: `comment-${event.params.commentId}`,
     badge: String(unread),
+  });
+});
+
+// Create only (editing a check-in rewrites the same doc), and only for today,
+// so backfills and test helpers don't ping guests. Wording is neutral: the
+// owner's gender isn't known here.
+exports.onCheckinCreated = onDocumentCreated("households/{ownerId}/checkins/{date}", async (event) => {
+  const c = event.data && event.data.data();
+  if (!c) return;
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Jerusalem" }).format(new Date());
+  if (event.params.date !== today) return;
+  await notifyGuests(event.params.ownerId, {
+    title: c.status === "on-time" ? "הגעה בזמן למשמרת 🎉" : "הגעה למשמרת",
+    body: c.status === "on-time" ? "נרשמה הגעה בזמן להיום" : "נרשמה הגעה באיחור להיום",
+    tag: `checkin-${event.params.date}`,
   });
 });
 

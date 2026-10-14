@@ -26,18 +26,36 @@ function tokenDoc(token) {
 }
 
 export async function enablePush() {
+  return registerToken(tokenDoc, {});
+}
+
+export async function disablePush() {
+  return unregisterToken(tokenDoc);
+}
+
+// Guests register under the household they were invited to, tagged with
+// their uid so the rules (and the server, for revoked grants) can tell whose it is.
+export function enableGuestPush(householdId, uid) {
+  return registerToken((token) => doc(db, "households", householdId, "guestPushTokens", token), { uid });
+}
+
+export function disableGuestPush(householdId) {
+  return unregisterToken((token) => doc(db, "households", householdId, "guestPushTokens", token));
+}
+
+async function registerToken(refFor, extra) {
   if ((await Notification.requestPermission()) !== "granted") return false;
   const registration = await navigator.serviceWorker.ready;
   const token = await getToken(getMessaging(app), { vapidKey: VAPID_KEY, serviceWorkerRegistration: registration });
   if (!token) return false;
-  await setDoc(tokenDoc(token), { createdAt: new Date().toISOString(), ua: navigator.userAgent });
+  await setDoc(refFor(token), { ...extra, createdAt: new Date().toISOString(), ua: navigator.userAgent });
   localStorage.setItem(TOKEN_KEY, token);
   return true;
 }
 
-export async function disablePush() {
+async function unregisterToken(refFor) {
   const token = localStorage.getItem(TOKEN_KEY);
   localStorage.removeItem(TOKEN_KEY);
-  if (token) await deleteDoc(tokenDoc(token)).catch(() => {});
+  if (token) await deleteDoc(refFor(token)).catch(() => {});
   await deleteToken(getMessaging(app)).catch(() => {});
 }

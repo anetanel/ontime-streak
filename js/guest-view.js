@@ -11,6 +11,7 @@ import {
   getInvite,
 } from "./db.js";
 import { pick } from "./gender.js";
+import { pushSupported, pushEnabled, enableGuestPush, disableGuestPush } from "./push.js";
 import { initInstallHint } from "./install-hint.js";
 import { escapeHtml, formatCommentTime, dayCommentInfo, dayCommentMetaLabel, likeButtonHtml, adminReactionHtml, wireLikeButtons } from "./comments-util.js";
 import { streakPeriodLabel, streakRuleLabel, isHighAward } from "./prizes.js";
@@ -48,6 +49,7 @@ function wireControls() {
   wired = true;
 
   initInstallHint(currentGrant.gender);
+  initGuestPushToggle();
   const rerenderCalendar = () => renderCalendar();
   document.getElementById("guest-cal-prev").addEventListener("click", () => {
     calState.month -= 1;
@@ -85,6 +87,33 @@ function wireControls() {
     calState.range = btn.dataset.range;
     [...toggle.children].forEach((b) => b.classList.toggle("active", b === btn));
     renderPct();
+  });
+}
+
+async function initGuestPushToggle() {
+  if (!(await pushSupported())) return;
+  const card = document.getElementById("guest-push-card");
+  const toggle = document.getElementById("guest-push-toggle");
+  const status = document.getElementById("guest-push-status");
+  document.getElementById("guest-push-label").textContent = "התראה כשמגיעים למשמרת";
+  card.style.display = "";
+  toggle.checked = pushEnabled();
+  toggle.addEventListener("change", async () => {
+    status.textContent = "";
+    try {
+      if (toggle.checked) {
+        if (!(await enableGuestPush(currentGrant.householdId, auth.currentUser.uid))) {
+          toggle.checked = false;
+          status.textContent = "לא התקבל אישור להתראות. אפשר להפעיל בהגדרות המכשיר.";
+        }
+      } else {
+        await disableGuestPush(currentGrant.householdId);
+      }
+    } catch (err) {
+      console.error("guest push toggle failed:", err);
+      toggle.checked = pushEnabled();
+      status.textContent = pick(currentGrant.gender, "הפעולה נכשלה. נסה שוב.", "הפעולה נכשלה. נסי שוב.");
+    }
   });
 }
 

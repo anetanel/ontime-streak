@@ -92,6 +92,14 @@ service cloud.firestore {
       allow read: if isOwner(ownerId) || isGuestOf(ownerId);
     }
 
+    // Guests opt in to a push when the admin checks in; they may only add or
+    // remove their own token. The owner reads them via the catch-all below.
+    match /households/{ownerId}/guestPushTokens/{token} {
+      allow create: if isGuestOf(ownerId) && request.resource.data.uid == request.auth.uid;
+      allow delete: if isGuestOf(ownerId) && resource.data.uid == request.auth.uid;
+      allow read, write: if isOwner(ownerId);
+    }
+
     match /households/{ownerId}/{document=**} {
       allow read, write: if isOwner(ownerId);
     }
