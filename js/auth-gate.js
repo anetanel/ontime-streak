@@ -8,7 +8,8 @@ let handlers = {};
 let bootedRole = null; // "admin" | "guest" — only hand off once per page load
 
 // Set when a guest pastes their link into the gate: an installed iOS PWA
-// has its own storage and opens without the ?invite= it was saved from.
+// has its own storage and opens without the ?invite= it was saved from
+// (a per-invite manifest start_url doesn't change that on iOS).
 let pastedInvite = null;
 
 function getInviteParam() {
@@ -22,23 +23,6 @@ function parseInviteInput(text) {
     return new URL(t).searchParams.get("invite") || null;
   } catch {
     return /^[\w-]+$/.test(t) ? t : null;
-  }
-}
-
-// Make "Add to Home Screen" from an invite page install an app that launches
-// with the invite, since the PWA can't see the Safari URL or session.
-async function useInviteManifest(inviteId) {
-  try {
-    const link = document.querySelector('link[rel="manifest"]');
-    const base = new URL("./", window.location.href);
-    const manifest = await (await fetch(link.href)).json();
-    manifest.start_url = new URL(`index.html?invite=${encodeURIComponent(inviteId)}`, base).href;
-    manifest.scope = base.href;
-    manifest.icons = manifest.icons.map((i) => ({ ...i, src: new URL(i.src, base).href }));
-    // A data: URI rather than a blob: URL — iOS ignores blob manifests.
-    link.href = `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}`;
-  } catch (e) {
-    // keep the static manifest; the paste form on the gate is the fallback
   }
 }
 
@@ -81,9 +65,6 @@ export function initAuthGate({ onAdmin, onGuest }) {
       els.status.textContent = "משהו השתבש. אפשר לנסות שוב.";
     });
   });
-
-  const inviteId = getInviteParam();
-  if (inviteId) useInviteManifest(inviteId);
 
   onAuthStateChanged(auth, (user) => {
     handleAuthState(user).catch((err) => {

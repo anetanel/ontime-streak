@@ -135,8 +135,13 @@ export function initInstallHint(gender) {
   const device = os === "ios" ? "באייפון" : "באנדרואיד";
   document.getElementById("guest-install-title").textContent =
     `${pick(gender, "הוסף", "הוסיפי")} את האפליקציה למסך הבית (${BROWSER_LABEL[browser]} ${device})`;
+  // An iOS Home Screen app can't see the link it was saved from, so the
+  // guest pastes it once on first launch (see invite-paste-form in auth-gate.js).
+  const steps = os === "ios"
+    ? [...info.steps, `${pick(gender, "העתק", "העתיקי")} את קישור ההזמנה, ובפתיחה הראשונה של האפליקציה ${pick(gender, "הדבק", "הדביקי")} אותו`]
+    : info.steps;
   document.getElementById("guest-install-steps").innerHTML =
-    info.steps.map((s) => `<li>${s}</li>`).join("") +
+    steps.map((s) => `<li>${s}</li>`).join("") +
     (info.note ? `<li class="install-note">${info.note}</li>` : "");
 
   document.getElementById("guest-install-dismiss").addEventListener("click", () => {
