@@ -71,6 +71,7 @@ exports.onCheckinCreated = onDocumentCreated("households/{ownerId}/checkins/{dat
     title: c.status === "on-time" ? "הגעה בזמן למשמרת 🎉" : "הגעה למשמרת",
     body: c.status === "on-time" ? "נרשמה הגעה בזמן להיום" : "נרשמה הגעה באיחור להיום",
     tag: `checkin-${event.params.date}`,
+    badge: "1", // cleared when the guest opens the app (guest-view.js)
   });
 });
 

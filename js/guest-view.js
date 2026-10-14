@@ -51,6 +51,10 @@ function wireControls() {
 
   initInstallHint(currentGrant.gender);
   initGuestPushToggle();
+  clearAppBadge();
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") clearAppBadge();
+  });
   document.getElementById("guest-app-version").textContent = `גרסה ${APP_VERSION} · ${APP_BUILD_TIME}`;
   const rerenderCalendar = () => renderCalendar();
   document.getElementById("guest-cal-prev").addEventListener("click", () => {
@@ -90,6 +94,11 @@ function wireControls() {
     [...toggle.children].forEach((b) => b.classList.toggle("active", b === btn));
     renderPct();
   });
+}
+
+// The Home Screen badge only marks "something new since you last looked".
+function clearAppBadge() {
+  if ("clearAppBadge" in navigator) navigator.clearAppBadge().catch(() => {});
 }
 
 async function initGuestPushToggle() {
