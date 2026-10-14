@@ -7,8 +7,38 @@ let els = {};
 let handlers = {};
 let bootedRole = null; // "admin" | "guest" — only hand off once per page load
 
+// Set when a guest pastes their link into the gate: an installed iOS PWA
+// has its own storage and opens without the ?invite= it was saved from.
+let pastedInvite = null;
+
 function getInviteParam() {
-  return new URLSearchParams(window.location.search).get("invite");
+  return pastedInvite || new URLSearchParams(window.location.search).get("invite");
+}
+
+// Accepts the full link or just the id.
+function parseInviteInput(text) {
+  const t = text.trim();
+  try {
+    return new URL(t).searchParams.get("invite") || null;
+  } catch {
+    return /^[\w-]+$/.test(t) ? t : null;
+  }
+}
+
+// Make "Add to Home Screen" from an invite page install an app that launches
+// with the invite, since the PWA can't see the Safari URL or session.
+async function useInviteManifest(inviteId) {
+  try {
+    const link = document.querySelector('link[rel="manifest"]');
+    const base = new URL("./", window.location.href);
+    const manifest = await (await fetch(link.href)).json();
+    manifest.start_url = new URL(`index.html?invite=${encodeURIComponent(inviteId)}`, base).href;
+    manifest.scope = base.href;
+    manifest.icons = manifest.icons.map((i) => ({ ...i, src: new URL(i.src, base).href }));
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)], { type: "application/manifest+json" }));
+  } catch (e) {
+    // keep the static manifest; the paste form on the gate is the fallback
+  }
 }
 
 export function initAuthGate({ onAdmin, onGuest }) {
@@ -32,6 +62,27 @@ export function initAuthGate({ onAdmin, onGuest }) {
   });
 
   els.signoutBtn.addEventListener("click", () => signOutUser());
+
+  els.pasteForm = document.getElementById("invite-paste-form");
+  els.pasteInput = document.getElementById("invite-paste-input");
+  els.pasteForm.addEventListener("submit", (e) => {
+    e.preventDefault();
+    const id = parseInviteInput(els.pasteInput.value);
+    if (!id) {
+      els.status.textContent = "הקישור לא נראה תקין. נסו להדביק אותו שוב.";
+      return;
+    }
+    pastedInvite = id;
+    els.status.textContent = "מתחבר…";
+    const user = auth.currentUser;
+    (user && user.isAnonymous ? handleAuthState(user) : signInAsGuest()).catch((err) => {
+      console.error("Pasted invite failed:", err);
+      els.status.textContent = "משהו השתבש. אפשר לנסות שוב.";
+    });
+  });
+
+  const inviteId = getInviteParam();
+  if (inviteId) useInviteManifest(inviteId);
 
   onAuthStateChanged(auth, (user) => {
     handleAuthState(user).catch((err) => {
@@ -68,7 +119,8 @@ async function handleAuthState(user) {
         showRole("guest", grant);
         return;
       }
-      showGate({ message: "קישור ההזמנה לא תקין, או שבוטל.", showSignin: false, showSignout: false });
+      pastedInvite = null;
+      showGate({ message: "קישור ההזמנה לא תקין, או שבוטל.", showSignin: true, showSignout: false });
       return;
     }
     // An anonymous session with no guest grant and no invite link isn't
@@ -119,4 +171,5 @@ function showGate({ message, showSignin, showSignout }) {
   els.signinBtn.style.display = showSignin ? "block" : "none";
   els.signinBtn.disabled = false;
   els.signoutBtn.style.display = showSignout ? "block" : "none";
+  els.pasteForm.style.display = showSignin ? "block" : "none";
 }
