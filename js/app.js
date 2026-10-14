@@ -102,6 +102,11 @@ export function renderBadges() {
   };
   set("badge-history", App.unreadDayCount);
   set("badge-rewards", App.unreadPrizeCount);
+  // Home Screen icon badge (iOS 16.4+ installed PWA).
+  if ("setAppBadge" in navigator) {
+    const total = App.unreadDayCount + App.unreadPrizeCount;
+    (total > 0 ? navigator.setAppBadge(total) : navigator.clearAppBadge()).catch(() => {});
+  }
 }
 
 export function showModal(el) {

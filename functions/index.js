@@ -30,10 +30,14 @@ exports.onCommentCreated = onDocumentCreated("households/{ownerId}/comments/{com
   const c = event.data && event.data.data();
   if (!c) return;
   const text = String(c.text || "");
+  // Unread = no readAt; Firestore can't query a missing field, so count here.
+  const all = await db.collection(`households/${event.params.ownerId}/comments`).get();
+  const unread = all.docs.filter((d) => !d.get("readAt")).length;
   await notifyOwner(event.params.ownerId, {
     title: c.dayDate ? "תגובה חדשה על יום" : "תגובה חדשה על פרס",
     body: `${c.authorLabel || "אורח"}: ${text.length > 120 ? text.slice(0, 117) + "…" : text}`,
     tag: `comment-${event.params.commentId}`,
+    badge: String(unread),
   });
 });
 

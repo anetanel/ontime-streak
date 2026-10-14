@@ -1,4 +1,4 @@
-const CACHE_NAME = "ontime-streak-v134";
+const CACHE_NAME = "ontime-streak-v135";
 const ASSETS = [
   "./",
   "./index.html",
@@ -153,14 +153,21 @@ self.addEventListener("push", (event) => {
   } catch (e) {
     // fall through to the generic notification
   }
+  const badge = Number(data.badge);
   event.waitUntil(
-    self.registration.showNotification(data.title || "On-Time Streak", {
-      body: data.body || "",
-      icon: "./icons/icon-192.png",
-      tag: data.tag || undefined,
-      dir: "rtl",
-      lang: "he",
-    })
+    Promise.all([
+      self.registration.showNotification(data.title || "On-Time Streak", {
+        body: data.body || "",
+        icon: "./icons/icon-192.png",
+        tag: data.tag || undefined,
+        dir: "rtl",
+        lang: "he",
+      }),
+      // Home Screen icon badge = unread comments, as counted by the server.
+      data.badge && "setAppBadge" in self.navigator
+        ? self.navigator.setAppBadge(badge).catch(() => {})
+        : null,
+    ])
   );
 });
 
