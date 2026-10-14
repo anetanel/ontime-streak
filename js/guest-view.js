@@ -11,6 +11,7 @@ import {
   getInvite,
 } from "./db.js";
 import { pick } from "./gender.js";
+import { APP_VERSION, APP_BUILD_TIME } from "./version.js";
 import { pushSupported, pushEnabled, enableGuestPush, disableGuestPush } from "./push.js";
 import { initInstallHint } from "./install-hint.js";
 import { escapeHtml, formatCommentTime, dayCommentInfo, dayCommentMetaLabel, likeButtonHtml, adminReactionHtml, wireLikeButtons } from "./comments-util.js";
@@ -50,6 +51,7 @@ function wireControls() {
 
   initInstallHint(currentGrant.gender);
   initGuestPushToggle();
+  document.getElementById("guest-app-version").textContent = `גרסה ${APP_VERSION} · ${APP_BUILD_TIME}`;
   const rerenderCalendar = () => renderCalendar();
   document.getElementById("guest-cal-prev").addEventListener("click", () => {
     calState.month -= 1;
